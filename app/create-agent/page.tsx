@@ -27,9 +27,10 @@ export default function CreateAgentPage() {
         src="https://cdn.jsdelivr.net/npm/ethers@6.13.2/dist/ethers.umd.min.js"
         strategy="afterInteractive"
       />
-      <Script src="/web3.js"          strategy="afterInteractive" />
-      <Script src="/token-launch.js"  strategy="afterInteractive" />
-      <Script src="/auth.js"          strategy="afterInteractive" />
+      <Script src="https://cdn.jsdelivr.net/npm/ethers@6.13.2/dist/ethers.umd.min.js" strategy="afterInteractive" />
+      <Script src="/web3.js"           strategy="afterInteractive" />
+      <Script src="/auth.js"           strategy="afterInteractive" />
+      <Script src="/create-agent.js"   strategy="afterInteractive" />
 
       <div className="wrap">
         {/* Header */}
