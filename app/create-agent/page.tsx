@@ -104,7 +104,7 @@ export default function CreateAgentPage() {
                 </div>
                 <div>
                   <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em", color: "#52525b", marginBottom: 8 }}>Total Supply</div>
-                  <input className="input" id="agentSupply" placeholder="100000000000" defaultValue="100000000000" type="number" />
+                  <div style={{ padding: "10px 14px", background: "#0f0f10", border: "1px solid rgba(255,255,255,.06)", borderRadius: 10, fontSize: 13, color: "#71717a" }}>100B (fixed)</div>
                 </div>
                 <div>
                   <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em", color: "#52525b", marginBottom: 8 }}>Category</div>
@@ -151,22 +151,13 @@ export default function CreateAgentPage() {
                 🚀 Launch Agent
               </button>
 
-              {/* Step 2: Add Liquidity */}
-              <div id="liquidityStep" style={{ display: "none", marginTop: 16, padding: 18, background: "#0a1a0e", border: "1px solid rgba(52,211,153,.2)", borderRadius: 16 }}>
-                <div style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".12em", color: "#34d399", marginBottom: 10 }}>➕ Step 2 — Add Liquidity</div>
-                <div style={{ fontSize: 12, color: "#52525b", marginBottom: 12 }}>
-                  Token: <span id="liquidityTokenAddr" style={{ color: "#a1a1aa", fontFamily: "monospace", fontSize: 11 }} />
+              {/* Bonding curve info */}
+              <div style={{ marginTop: 12, padding: "12px 16px", background: "#0a1a0e", border: "1px solid rgba(52,211,153,.15)", borderRadius: 14 }}>
+                <div style={{ fontSize: 12, color: "#34d399", fontWeight: 600, marginBottom: 6 }}>🎯 Pump-style bonding curve</div>
+                <div style={{ fontSize: 12, color: "#52525b", lineHeight: 1.7 }}>
+                  No liquidity needed from you — buyers provide it.
+                  When <b style={{ color: "#a1a1aa" }}>50 COTI</b> is collected, token graduates to Uniswap V2 automatically. LP burned forever — zero rug pull.
                 </div>
-                <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 10 }}>
-                  <input className="input" id="liquidityCoti" type="number" placeholder="COTI amount (e.g. 0.5)" step={0.01} style={{ flex: 1 }} />
-                  <span style={{ color: "#52525b", fontSize: 13, whiteSpace: "nowrap" }}>COTI</span>
-                </div>
-                <div style={{ fontSize: 12, color: "#52525b", marginBottom: 12 }}>
-                  50% of token supply + your COTI → creates the trading pair
-                </div>
-                <button className="btn primary" id="liqBtn" style={{ width: "100%", justifyContent: "center", padding: 12, borderRadius: 12 }}>
-                  ⊕ Add Liquidity
-                </button>
               </div>
 
               <div id="launchToast" className="launch-toast" />
@@ -175,9 +166,9 @@ export default function CreateAgentPage() {
             {/* SIDEBAR */}
             <div style={{ display: "grid", gap: 0, border: "1px solid rgba(255,255,255,.07)", borderRadius: 24, overflow: "hidden", background: "#0b0b0c" }}>
               {[
-                { icon: "✦", title: "Real deployment", desc: "Token deployed on-chain via TokenFactory contract on COTI Testnet." },
-                { icon: "◈", title: "AMM ready", desc: "UniswapV2 router live on COTI Testnet — buy/sell tokens after launch." },
-                { icon: "⬆", title: "Supply: 100B", desc: "Default 100B supply, $20K launch MC. Editable before deploy." },
+                { icon: "✦", title: "Gas only launch", desc: "No COTI needed for liquidity. Creator pays gas only — pump.fun style." },
+                { icon: "◈", title: "Bonding curve", desc: "Buyers provide liquidity. Price rises with every buy automatically." },
+                { icon: "🎓", title: "Auto-graduation", desc: "At 50 COTI collected → UniV2 pool created, LP burned forever. Zero rug." },
               ].map(({ icon, title, desc }, i, arr) => (
                 <div key={title} style={{ padding: "20px 24px", borderBottom: i < arr.length - 1 ? "1px solid rgba(255,255,255,.05)" : "none", display: "flex", gap: 16, alignItems: "flex-start" }}>
                   <div style={{ fontSize: 20, flexShrink: 0 }}>{icon}</div>
