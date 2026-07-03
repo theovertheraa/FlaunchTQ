@@ -180,3 +180,31 @@
 .toast-msg.info{background:rgba(147,197,253,.08);border:1px solid rgba(147,197,253,.15);color:#93c5fd}
 .otp-input{width:100%;padding:13px 16px;background:#111;border:1px solid rgba(255,255,255,.15);border-radius:14px;color:#f5f5f5;font-size:20px;letter-spacing:.3em;text-align:center;outline:none;box-sizing:border-box;margin-bottom:10px}
 .login-terms{text-align:center;font-size:11px;color:#3f3f46;margin-top:20px;line-height:1.6}
+
+/* ── AVATAR (agent initials circle) ───────────────────── */
+.avatar{width:44px;height:44px;border-radius:16px;background:#111;border:1px solid rgba(255,255,255,.1);display:grid;place-items:center;font-size:13px;font-weight:700;flex-shrink:0}
+
+/* ── METRIC LABELS (stat pills) ──────────────────────── */
+.metric-label{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:#52525b;margin-bottom:4px}
+.metric-val{font-size:20px;font-weight:660;letter-spacing:-.03em;color:#f5f5f5;margin-top:4px}
+
+/* ── PORTFOLIO ───────────────────────────────────────── */
+.port-stat{flex:1;min-width:140px;padding:18px 22px;border-right:1px solid rgba(255,255,255,.06)}
+.port-stat:last-child{border-right:none}
+.port-label{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:#52525b;margin-bottom:6px}
+.port-val{font-size:22px;font-weight:660;letter-spacing:-.03em;color:#f5f5f5}
+.hold-row{display:grid;grid-template-columns:2fr 1fr 1.2fr 1fr 1fr;align-items:center;padding:14px 20px;border-bottom:1px solid rgba(255,255,255,.04);transition:background .12s}
+.hold-row:hover{background:rgba(255,255,255,.02)}
+.hold-row:last-child{border-bottom:none}
+.hold-head{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#3f3f46;padding:10px 20px}
+.token-dot{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;font-size:11px;font-weight:700;flex-shrink:0}
+.empty-state{text-align:center;padding:64px 24px;color:#3f3f46}
+.tab-btn{padding:8px 18px;border-radius:999px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid rgba(255,255,255,.08);background:transparent;color:#52525b;transition:all .15s}
+.tab-btn.active{background:rgba(255,255,255,.08);color:#f5f5f5;border-color:rgba(255,255,255,.15)}
+.chain-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:3px 10px;border-radius:999px;background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.15);color:#34d399}
+
+/* ── CREATE AGENT ────────────────────────────────────── */
+.launch-toast{display:none;padding:14px 18px;border-radius:14px;font-size:13px;line-height:1.6;margin-top:14px}
+.launch-toast.success{background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.2);color:#34d399}
+.launch-toast.error{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.2);color:#f87171}
+.launch-toast.loading{background:rgba(147,197,253,.06);border:1px solid rgba(147,197,253,.12);color:#93c5fd}
