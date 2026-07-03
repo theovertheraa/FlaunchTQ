@@ -16,9 +16,9 @@ export function AuthGate() {
         <Shield className="h-5 w-5 text-zinc-400" />
       </div>
       <div className="space-y-3">
-        <h1 className="text-3xl font-semibold tracking-tight text-white">Novus</h1>
+        <h1 className="text-3xl font-semibold tracking-tight text-white">FlaunchTQ</h1>
         <p className="text-sm leading-6 text-zinc-400">
-          Premium AI Agent Marketplace with matte-black execution, discoverability, and creator tooling.
+          AI Agent Marketplace on COTI — discover, create, and trade autonomous agents.
         </p>
       </div>
       <div className="space-y-3 rounded-2xl border border-white/8 bg-black p-4 text-sm text-zinc-300">
