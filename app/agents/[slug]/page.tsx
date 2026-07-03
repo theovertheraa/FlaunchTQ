@@ -35,14 +35,16 @@ export default function AgentPage({ params }: Props) {
     const existing = document.getElementById("agent-cfg");
     if (existing) existing.remove();
     cfgScript.textContent = `window.AGENT_CFG=${JSON.stringify({
-      ticker:   agent.ticker,
-      color:    agent.color,
-      seed:     agent.seed,
-      status:   agent.status,
-      supply:   agent.supply,
-      launchMC: agent.launchMC,
-      name:     agent.name,
-      slug:     agent.slug,
+      ticker:          agent.ticker,
+      color:           agent.color,
+      seed:            agent.seed,
+      status:          agent.status,
+      supply:          agent.supply,
+      launchMC:        agent.launchMC,
+      name:            agent.name,
+      slug:            agent.slug,
+      contractAddress: agent.contractAddress || null,
+      curveAddress:    agent.curveAddress    || null,
     })};`;
     document.head.appendChild(cfgScript);
 
@@ -156,6 +158,36 @@ export default function AgentPage({ params }: Props) {
             <canvas id="tokenCanvas" />
           </div>
         </div>
+
+        {/* Bonding curve graduation progress bar */}
+        {agent.curveAddress && (
+          <div style={{
+            background: "#0b0b0c", border: "1px solid rgba(255,255,255,.07)",
+            borderRadius: 16, padding: "14px 18px", marginBottom: 16
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <div style={{ fontSize: 12, color: "#71717a", fontWeight: 600, letterSpacing: ".04em", textTransform: "uppercase" }}>
+                🎓 Graduation Progress
+              </div>
+              <div style={{ fontSize: 12, color: "#a1a1aa" }}>
+                <span id="curveCollected">0</span> / 50 COTI
+              </div>
+            </div>
+            <div style={{ background: "#18181b", borderRadius: 99, height: 8, overflow: "hidden" }}>
+              <div
+                id="curveProgressBar"
+                style={{
+                  height: "100%", borderRadius: 99, transition: "width .6s ease",
+                  background: `linear-gradient(90deg, ${agent.color}, ${agent.color}99)`,
+                  width: "0%"
+                }}
+              />
+            </div>
+            <div style={{ marginTop: 8, fontSize: 11, color: "#52525b" }}>
+              When 50 COTI collected → token graduates to Uniswap V2 · LP burned forever
+            </div>
+          </div>
+        )}
 
         {/* Trade feed */}
         <div className="trade-feed" style={{ marginBottom: 80 }}>

@@ -1,48 +1,76 @@
 // web3.js — COTI Network contract layer for FlaunchTQ
 // Chain: COTI Testnet (chain ID 7082400)
-// Uses ethers v6 via CDN.
+// Bonding curve model (pump.fun style) — creator pays gas only.
 
 (function () {
-  const CHAIN_ID    = 7082400;
-  const CHAIN_HEX   = "0x6C0360"; // 7082400 in hex
-  const RPC_URL     = "https://testnet.coti.io/rpc";
-  const EXPLORER    = "https://testnet.cotiscan.io";
-  const CHAIN_NAME  = "COTI Testnet";
-  const CURRENCY    = { name: "COTI", symbol: "COTI", decimals: 18 };
+  const CHAIN_ID   = 7082400;
+  const CHAIN_HEX  = "0x6C0360";
+  const RPC_URL    = "https://testnet.coti.io/rpc";
+  const EXPLORER   = "https://testnet.cotiscan.io";
+  const CHAIN_NAME = "COTI Testnet";
+  const CURRENCY   = { name: "COTI", symbol: "COTI", decimals: 18 };
 
-  // Contract addresses on COTI Testnet
-  const FACTORY_ADDR = "0x6d8FDF3813dABFEe9f7b34b81903A1705A8ecb53";
-  const ROUTER_ADDR  = "0xD713704b5E7f36fA0d91692091861B13059cD514";
-  const WETH_ADDR    = "0xaD52D874A04b0b7274A1Bb0043963C27016F1DbA";
-  const UNI_FACTORY  = "0x830c09A07674b21D2808DAcFeCFb6Ff7C09efD76";
+  // ── Contract addresses ────────────────────────────────────────
+  const FLAUNCH_FACTORY = "0x50a8904A42845fAe7Cdb31FA86eB080cA44EA635"; // FlaunchFactory (bonding curve)
+  const ROUTER_ADDR     = "0xD713704b5E7f36fA0d91692091861B13059cD514"; // UniV2 Router (post-graduation)
+  const WETH_ADDR       = "0xaD52D874A04b0b7274A1Bb0043963C27016F1DbA"; // WCOTI
+  const UNI_FACTORY     = "0x830c09A07674b21D2808DAcFeCFb6Ff7C09efD76"; // UniV2 Factory
 
-  // ── Add/switch COTI network in MetaMask ──────────────────────
+  // Graduation: 50 COTI collected → auto-list on UniV2, LP burned forever
+  const GRADUATION_THRESHOLD = "50"; // in COTI
+
+  // ── ABIs ──────────────────────────────────────────────────────
+  const FACTORY_ABI = [
+    "function launch(string _name, string _symbol, string _imageUrl, string _description) returns (address tokenAddr, address curveAddr)",
+    "function tokenCount() view returns (uint256)",
+    "function getToken(uint256 idx) view returns (tuple(address tokenAddress, address curveAddress, address creator, string name, string symbol, string imageUrl, string description, uint256 createdAt))",
+    "function tokenToCurve(address token) view returns (address)",
+    "function getCreatorTokens(address creator) view returns (uint256[])",
+    "event TokenLaunched(address indexed tokenAddress, address indexed curveAddress, address indexed creator, string name, string symbol, string imageUrl, uint256 timestamp)"
+  ];
+
+  const CURVE_ABI = [
+    "function buy(uint256 minTokensOut) payable",
+    "function sell(uint256 tokensIn, uint256 minCotiOut)",
+    "function getBuyAmount(uint256 cotiIn) view returns (uint256)",
+    "function getSellAmount(uint256 tokensIn) view returns (uint256)",
+    "function currentPrice() view returns (uint256)",
+    "function progress() view returns (uint256)",
+    "function marketCap() view returns (uint256)",
+    "function cotiCollected() view returns (uint256)",
+    "function graduated() view returns (bool)",
+    "function token() view returns (address)",
+    "function GRADUATION_THRESHOLD() view returns (uint256)",
+    "function graduate()",
+    "event Buy(address indexed buyer, uint256 cotiIn, uint256 tokensOut, uint256 newPrice, uint256 cotiCollected)",
+    "event Sell(address indexed seller, uint256 tokensIn, uint256 cotiOut, uint256 newPrice, uint256 cotiCollected)",
+    "event Graduated(address indexed token, address indexed pair, uint256 cotiAdded, uint256 tokensAdded)"
+  ];
+
+  const ERC20_ABI = [
+    "function balanceOf(address) view returns (uint256)",
+    "function approve(address spender, uint256 amount) returns (bool)",
+    "function allowance(address owner, address spender) view returns (uint256)",
+    "function transfer(address to, uint256 amount) returns (bool)"
+  ];
+
+  // ── Network helpers ───────────────────────────────────────────
   async function addCotiNetwork() {
     await window.ethereum.request({
       method: "wallet_addEthereumChain",
-      params: [{
-        chainId: CHAIN_HEX,
-        chainName: CHAIN_NAME,
-        nativeCurrency: CURRENCY,
-        rpcUrls: [RPC_URL],
-        blockExplorerUrls: [EXPLORER]
-      }]
+      params: [{ chainId: CHAIN_HEX, chainName: CHAIN_NAME, nativeCurrency: CURRENCY, rpcUrls: [RPC_URL], blockExplorerUrls: [EXPLORER] }]
     });
   }
 
   async function switchToCoti() {
     try {
-      await window.ethereum.request({
-        method: "wallet_switchEthereumChain",
-        params: [{ chainId: CHAIN_HEX }]
-      });
+      await window.ethereum.request({ method: "wallet_switchEthereumChain", params: [{ chainId: CHAIN_HEX }] });
     } catch (e) {
       if (e.code === 4902) await addCotiNetwork();
       else throw e;
     }
   }
 
-  // ── Provider ──────────────────────────────────────────────────
   async function getSigner() {
     if (!window.ethers) throw new Error("ethers.js not loaded");
     if (!window.ethereum) throw new Error("No wallet detected. Install MetaMask.");
@@ -63,118 +91,150 @@
     return ethers.formatEther(bal);
   }
 
-  // ── ERC20 (standard, no privacy for now) ─────────────────────
-  const ERC20_ABI = [
-    "function balanceOf(address) view returns (uint256)",
-    "function transfer(address to, uint256 amount) returns (bool)",
-    "function approve(address spender, uint256 amount) returns (bool)",
-    "function allowance(address owner, address spender) view returns (uint256)"
-  ];
-
   async function getTokenBalance(tokenAddress, walletAddress) {
     const provider = await getReadProvider();
     const erc20 = new ethers.Contract(tokenAddress, ERC20_ABI, provider);
-    return erc20.balanceOf(walletAddress);
+    const raw = await erc20.balanceOf(walletAddress);
+    return ethers.formatUnits(raw, 18);
   }
 
-  // ── Launch token (generic — works when factory is deployed) ──
-  const FACTORY_ABI = [
-    "function launchToken(string _name, string _symbol, uint256 _totalSupply, string _imageUrl, string _description) payable returns (address)",
-    "function tokenCount() view returns (uint256)",
-    "function tokens(uint256) view returns (address tokenAddress, string name, string symbol, uint256 totalSupply, address creator, string imageUrl, string description, uint256 createdAt)"
-  ];
-
-  async function launchToken({ name, symbol, supply, imageUrl, description }) {
+  // ── Launch token (bonding curve — gas only) ───────────────────
+  // Creator pays gas only. No COTI required for liquidity.
+  // Factory deploys token + bonding curve in one tx.
+  async function launchToken({ name, symbol, imageUrl, description }) {
     const signer  = await getSigner();
-    const factory = new ethers.Contract(FACTORY_ADDR, FACTORY_ABI, signer);
-    const supplyWei = ethers.parseUnits(String(supply), 18);
-    const tx = await factory.launchToken(
-      name, symbol, supplyWei, imageUrl || "", description || "",
-      { gasLimit: 8_000_000 }
+    const factory = new ethers.Contract(FLAUNCH_FACTORY, FACTORY_ABI, signer);
+    const tx = await factory.launch(
+      name,
+      symbol,
+      imageUrl  || "",
+      description || "",
+      { gasLimit: 20_000_000 }
     );
     const receipt = await tx.wait();
-    const iface = new ethers.Interface([
-      "event TokenLaunched(address indexed tokenAddress, address indexed creator, string name, string symbol, uint256 totalSupply, string imageUrl, uint256 timestamp)"
-    ]);
-    let tokenAddress = null;
+    const iface = new ethers.Interface(FACTORY_ABI);
+    let tokenAddress = null, curveAddress = null;
     for (const log of receipt.logs) {
       try {
         const parsed = iface.parseLog(log);
-        if (parsed) { tokenAddress = parsed.args.tokenAddress; break; }
+        if (parsed?.name === "TokenLaunched") {
+          tokenAddress = parsed.args.tokenAddress;
+          curveAddress = parsed.args.curveAddress;
+          break;
+        }
       } catch(e) {}
     }
-    return { tx, receipt, tokenAddress };
+    return { tx, receipt, tokenAddress, curveAddress };
   }
 
-  // ── Add initial liquidity (COTI + tokens) to UniswapV2 ───────────────
-  async function addLiquidity(tokenAddress, tokenAmountWei, cotiAmountWei) {
-    const signer  = await getSigner();
-    const erc20   = new ethers.Contract(tokenAddress, ERC20_ABI, signer);
-    const router  = new ethers.Contract(ROUTER_ADDR, ROUTER_ABI, signer);
-    const owner   = await signer.getAddress();
-    const deadline = Math.floor(Date.now() / 1000) + 1200;
-    // Approve router to spend tokens
-    const approveTx = await erc20.approve(ROUTER_ADDR, tokenAmountWei, { gasLimit: 500_000 });
-    await approveTx.wait();
-    // Add liquidity
-    const tx = await router.addLiquidityETH(
-      tokenAddress, tokenAmountWei, 0n, 0n,
-      owner, deadline,
-      { value: cotiAmountWei, gasLimit: 5_000_000 }
-    );
-    return tx.wait();
-  }
-
-  // ── Router swap (standard UniV2, when deployed) ───────────────
-  const ROUTER_ABI = [
-    "function swapExactETHForTokens(uint256 amountOutMin, address[] path, address to, uint256 deadline) payable returns (uint256[])",
-    "function swapExactTokensForETH(uint256 amountIn, uint256 amountOutMin, address[] path, address to, uint256 deadline) returns (uint256[])",
-    "function getAmountsOut(uint256 amountIn, address[] path) view returns (uint256[])",
-    "function addLiquidityETH(address token, uint256 amountTokenDesired, uint256 amountTokenMin, uint256 amountETHMin, address to, uint256 deadline) payable returns (uint256 amountToken, uint256 amountETH, uint256 liquidity)"
-  ];
-
-  async function buyToken(tokenAddress, cotiAmountWei, slippagePct = 5) {
+  // ── Bonding curve buy ─────────────────────────────────────────
+  async function buyCurve(curveAddress, cotiAmountWei, slippagePct = 5) {
     const signer = await getSigner();
-    const router = new ethers.Contract(ROUTER_ADDR, ROUTER_ABI, signer);
-    const path   = [WETH_ADDR, tokenAddress];
-    const deadline = Math.floor(Date.now() / 1000) + 1200;
-    // Get quote
-    let amountOutMin = 0n;
+    const curve  = new ethers.Contract(curveAddress, CURVE_ABI, signer);
+    const provider = await getReadProvider();
+    const curveRead = new ethers.Contract(curveAddress, CURVE_ABI, provider);
+
+    let minOut = 0n;
     try {
-      const amounts = await router.getAmountsOut(cotiAmountWei, path);
-      amountOutMin = amounts[1] * BigInt(100 - slippagePct) / 100n;
+      const quote = await curveRead.getBuyAmount(cotiAmountWei);
+      minOut = quote * BigInt(100 - slippagePct) / 100n;
     } catch(e) {}
-    const tx = await router.swapExactETHForTokens(amountOutMin, path, await signer.getAddress(), deadline, { value: cotiAmountWei, gasLimit: 3_000_000 });
+
+    const tx = await curve.buy(minOut, { value: cotiAmountWei, gasLimit: 500_000 });
     return tx.wait();
   }
 
-  async function sellToken(tokenAddress, tokenAmountWei, slippagePct = 5) {
+  // ── Bonding curve sell ────────────────────────────────────────
+  async function sellCurve(curveAddress, tokenAddress, tokenAmountWei, slippagePct = 5) {
     const signer = await getSigner();
+    const curve  = new ethers.Contract(curveAddress, CURVE_ABI, signer);
     const erc20  = new ethers.Contract(tokenAddress, ERC20_ABI, signer);
-    const router = new ethers.Contract(ROUTER_ADDR, ROUTER_ABI, signer);
-    const path   = [tokenAddress, WETH_ADDR];
-    const deadline = Math.floor(Date.now() / 1000) + 1200;
+    const provider = await getReadProvider();
+    const curveRead = new ethers.Contract(curveAddress, CURVE_ABI, provider);
+
     // Approve
-    const allowance = await erc20.allowance(await signer.getAddress(), ROUTER_ADDR);
+    const owner = await signer.getAddress();
+    const allowance = await erc20.allowance(owner, curveAddress);
     if (allowance < tokenAmountWei) {
-      const approveTx = await erc20.approve(ROUTER_ADDR, tokenAmountWei);
+      const approveTx = await erc20.approve(curveAddress, tokenAmountWei, { gasLimit: 200_000 });
       await approveTx.wait();
     }
-    let amountOutMin = 0n;
+
+    let minCoti = 0n;
     try {
-      const amounts = await router.getAmountsOut(tokenAmountWei, path);
-      amountOutMin = amounts[1] * BigInt(100 - slippagePct) / 100n;
+      const quote = await curveRead.getSellAmount(tokenAmountWei);
+      minCoti = quote * BigInt(100 - slippagePct) / 100n;
     } catch(e) {}
-    const tx = await router.swapExactTokensForETH(tokenAmountWei, amountOutMin, path, await signer.getAddress(), deadline, { gasLimit: 3_000_000 });
+
+    const tx = await curve.sell(tokenAmountWei, minCoti, { gasLimit: 500_000 });
     return tx.wait();
+  }
+
+  // ── Read curve state ──────────────────────────────────────────
+  async function getCurveState(curveAddress) {
+    const provider = await getReadProvider();
+    const curve = new ethers.Contract(curveAddress, CURVE_ABI, provider);
+    const [price, prog, collected, graduated, threshold] = await Promise.all([
+      curve.currentPrice(),
+      curve.progress(),
+      curve.cotiCollected(),
+      curve.graduated(),
+      curve.GRADUATION_THRESHOLD()
+    ]);
+    return {
+      price:      ethers.formatEther(price),
+      progress:   Number(prog),
+      collected:  ethers.formatEther(collected),
+      threshold:  ethers.formatEther(threshold),
+      graduated:  graduated
+    };
+  }
+
+  // ── Get all launched tokens from factory ─────────────────────
+  async function getAllTokens() {
+    const provider = await getReadProvider();
+    const factory  = new ethers.Contract(FLAUNCH_FACTORY, FACTORY_ABI, provider);
+    const count = await factory.tokenCount();
+    const tokens = [];
+    for (let i = 0; i < Number(count); i++) {
+      try {
+        const t = await factory.getToken(i);
+        tokens.push({
+          tokenAddress: t.tokenAddress,
+          curveAddress: t.curveAddress,
+          creator:      t.creator,
+          name:         t.name,
+          symbol:       t.symbol,
+          imageUrl:     t.imageUrl,
+          description:  t.description,
+          createdAt:    Number(t.createdAt)
+        });
+      } catch(e) {}
+    }
+    return tokens;
+  }
+
+  // ── Get curve for a token ─────────────────────────────────────
+  async function getCurveForToken(tokenAddress) {
+    const provider = await getReadProvider();
+    const factory  = new ethers.Contract(FLAUNCH_FACTORY, FACTORY_ABI, provider);
+    return factory.tokenToCurve(tokenAddress);
   }
 
   window.FlaunchWeb3 = {
+    // Config
     CHAIN_ID, CHAIN_HEX, RPC_URL, EXPLORER, CHAIN_NAME, CURRENCY,
-    FACTORY_ADDR, ROUTER_ADDR, WETH_ADDR, UNI_FACTORY,
-    switchToCoti, addCotiNetwork,
-    getSigner, getReadProvider,
+    FLAUNCH_FACTORY, ROUTER_ADDR, WETH_ADDR, UNI_FACTORY,
+    GRADUATION_THRESHOLD,
+    // Network
+    switchToCoti, addCotiNetwork, getSigner, getReadProvider,
+    // Balances
     getCotiBalance, getTokenBalance,
-    launchToken, addLiquidity, buyToken, sellToken,
+    // Launch
+    launchToken,
+    // Bonding curve trading
+    buyCurve, sellCurve, getCurveState,
+    // Read
+    getAllTokens, getCurveForToken,
   };
 })();

@@ -19,6 +19,8 @@ export interface AgentData {
   volStr: string;
   change: string;
   isNew: boolean;
+  contractAddress?: string; // on-chain token CA
+  curveAddress?: string;    // bonding curve CA
 }
 
 export const ALL_AGENTS: AgentData[] = [

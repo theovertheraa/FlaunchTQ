@@ -285,11 +285,12 @@ function execTrade() {
 
 /* ─── HYBRID EXEC (real on-chain if wallet + contract, else mock) ──── */
 async function execTradeOnChain(amt) {
-  const contractAddr = CFG.contractAddress;
-  const user         = window.NovusAuth && window.NovusAuth.getUser();
-  const hasWallet    = user && user.type === "wallet" && window.ethereum;
+  const curveAddr   = CFG.curveAddress;
+  const tokenAddr   = CFG.contractAddress;
+  const user        = window.NovusAuth && window.NovusAuth.getUser();
+  const hasWallet   = user && user.type === "wallet" && window.ethereum;
 
-  if (!hasWallet || !contractAddr || !window.FlaunchWeb3 || !window.ethers) {
+  if (!hasWallet || !curveAddr || !window.FlaunchWeb3 || !window.ethers) {
     // Fallback to mock
     execTradeMock(amt);
     return;
@@ -300,13 +301,13 @@ async function execTradeOnChain(amt) {
 
   try {
     if (_sheetMode === "buy") {
-      const ethAmt = ethers.parseEther(String(amt));
-      await FlaunchWeb3.buyToken(contractAddr, ethAmt);
-      showToast("✅ Bought " + E.ticker + " on-chain for " + amt + " COTI");
+      const cotiWei = ethers.parseEther(String(amt));
+      await FlaunchWeb3.buyCurve(curveAddr, cotiWei);
+      showToast("✅ Bought " + E.ticker + " via bonding curve for " + amt + " COTI");
     } else {
       const tokenAmt = ethers.parseUnits(String(amt), 18);
-      await FlaunchWeb3.sellToken(contractAddr, tokenAmt);
-      showToast("✅ Sold " + fmtNum(amt) + " " + E.ticker + " on-chain");
+      await FlaunchWeb3.sellCurve(curveAddr, tokenAddr, tokenAmt);
+      showToast("✅ Sold " + fmtNum(amt) + " " + E.ticker + " via bonding curve");
     }
     document.getElementById("sheetAmt").value = "";
     document.getElementById("sheetEst").textContent = "";
@@ -426,6 +427,27 @@ function _tokenPageInit() {
     drawChart();
     updateFeed();
   }, TICK_REAL_MS);
+
+  // Poll bonding curve state every 10s if curve address exists
+  if (CFG.curveAddress && window.FlaunchWeb3) {
+    async function updateCurveProgress() {
+      try {
+        const state = await window.FlaunchWeb3.getCurveState(CFG.curveAddress);
+        const bar   = document.getElementById("curveProgressBar");
+        const col   = document.getElementById("curveCollected");
+        if (bar) bar.style.width = Math.min(state.progress, 100) + "%";
+        if (col) col.textContent = parseFloat(state.collected).toFixed(2);
+        if (state.graduated) {
+          const progressWrap = bar?.closest("div[style]")?.parentElement?.parentElement;
+          if (progressWrap) {
+            progressWrap.innerHTML = '<div style="text-align:center;padding:8px;font-size:13px;color:#34d399;font-weight:600">🎓 Graduated! Trading on Uniswap V2</div>';
+          }
+        }
+      } catch(e) {}
+    }
+    updateCurveProgress();
+    setInterval(updateCurveProgress, 10_000);
+  }
 }
 // Boot immediately if DOM ready, else wait
 if (document.readyState === "loading") {
