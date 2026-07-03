@@ -38,6 +38,13 @@ export function Nav() {
                 {l.label}
               </Link>
             ))}
+            <Link
+              href="/docs"
+              className={pathname.startsWith("/docs") ? "active" : ""}
+              style={{ opacity: 0.7 }}
+            >
+              Docs
+            </Link>
           </nav>
 
           {authenticated ? (
