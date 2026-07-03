@@ -1,0 +1,14 @@
+{
+  "name": "novus",
+  "version": "1.0.0",
+  "type": "web",
+  "description": "Premium AI agent marketplace UI foundation",
+  "framework": "next",
+  "port": 3015,
+  "scripts": {
+    "install": "npm install",
+    "dev": "npm run dev",
+    "build": "npm run build",
+    "start": "npm run start"
+  }
+}
