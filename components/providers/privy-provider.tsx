@@ -28,6 +28,7 @@ export function AppPrivyProvider({ children }: { children: React.ReactNode }) {
         appearance: {
           theme: "dark",
           accentColor: "#ffffff",
+          showWalletLoginFirst: false,
         },
         loginMethods: ["email", "google", "twitter", "wallet"],
         embeddedWallets: {
