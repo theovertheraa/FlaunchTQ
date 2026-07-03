@@ -5,7 +5,6 @@ import Script from "next/script";
 import Link from "next/link";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { useWallets } from "@privy-io/react-auth";
-import { useRouter } from "next/navigation";
 
 function fmtNum(n: number) {
   if (n >= 1e6) return (n / 1e6).toFixed(2) + "M";
@@ -14,16 +13,11 @@ function fmtNum(n: number) {
 }
 
 export default function ProfilePage() {
-  const { ready, authenticated, user, logout, displayName, initials, embeddedWallet, externalWallet, activeWallet } = useAuth();
+  const { ready, authenticated, login, user, logout, displayName, initials, embeddedWallet, externalWallet } = useAuth();
   const { wallets } = useWallets();
-  const router = useRouter();
   const [tradeCount, setTradeCount] = useState(0);
   const [usdt, setUsdt] = useState(10000);
   const [holdingCount, setHoldingCount] = useState(0);
-
-  useEffect(() => {
-    if (ready && !authenticated) router.replace("/login");
-  }, [ready, authenticated, router]);
 
   const loginType = user?.google ? "Google" : user?.twitter ? "X / Twitter" : user?.email ? "Email" : "Wallet";
 
@@ -37,6 +31,14 @@ export default function ProfilePage() {
         setHoldingCount(Object.keys(w.getAllHoldings()).length);
       }} />
       <Script src="/auth.js" strategy="afterInteractive" />
+
+      {/* Not logged in */}
+      {ready && !authenticated && (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "60vh", gap: 16 }}>
+          <p style={{ color: "#71717a", fontSize: 15, margin: 0 }}>Login to continue</p>
+          <button className="btn primary" onClick={login}>Login</button>
+        </div>
+      )}
 
       {(!ready || (ready && authenticated && user)) && (
         <div id="pageWrap" className="wrap">
