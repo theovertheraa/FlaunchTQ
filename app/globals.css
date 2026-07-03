@@ -160,3 +160,23 @@
 .trade-float-bar button{pointer-events:all;flex:1;padding:13px;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer;border:none}
 .trade-float-buy{background:#34d399;color:#000}
 .trade-float-sell{background:rgba(248,113,113,.12);color:#f87171;border:1px solid rgba(248,113,113,.3) !important}
+
+/* ── LOGIN PAGE ────────────────────────────────────── */
+.login-wrap{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
+.login-card{width:100%;max-width:400px;background:#0b0b0c;border:1px solid rgba(255,255,255,.08);border-radius:28px;padding:36px 32px}
+.login-logo{width:52px;height:52px;border-radius:18px;background:#111;border:1px solid rgba(255,255,255,.1);display:grid;place-items:center;font-size:22px;font-weight:700;margin:0 auto 20px}
+.login-title{text-align:center;font-size:22px;font-weight:660;letter-spacing:-.03em;color:#fff;margin:0 0 6px}
+.login-sub{text-align:center;font-size:13px;color:#52525b;margin:0 0 32px;line-height:1.6}
+.login-divider{display:flex;align-items:center;gap:12px;margin:20px 0;color:#3f3f46;font-size:12px}
+.login-divider::before,.login-divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.06)}
+.social-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:12px;padding:13px 20px;background:#111;border:1px solid rgba(255,255,255,.08);border-radius:14px;color:#e4e4e7;font-size:14px;font-weight:500;cursor:pointer;margin-bottom:10px;transition:background .15s,border-color .15s}
+.social-btn:hover{background:#161618;border-color:rgba(255,255,255,.14)}
+.social-btn:disabled{opacity:.5;cursor:not-allowed}
+.email-input{width:100%;padding:13px 16px;background:#111;border:1px solid rgba(255,255,255,.08);border-radius:14px;color:#f5f5f5;font-size:14px;outline:none;box-sizing:border-box;margin-bottom:10px}
+.email-input:focus{border-color:rgba(255,255,255,.2)}
+.toast-msg{padding:12px 20px;border-radius:12px;font-size:13px;text-align:center;margin-top:16px;line-height:1.5}
+.toast-msg.error{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.2);color:#f87171}
+.toast-msg.success{background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.2);color:#34d399}
+.toast-msg.info{background:rgba(147,197,253,.08);border:1px solid rgba(147,197,253,.15);color:#93c5fd}
+.otp-input{width:100%;padding:13px 16px;background:#111;border:1px solid rgba(255,255,255,.15);border-radius:14px;color:#f5f5f5;font-size:20px;letter-spacing:.3em;text-align:center;outline:none;box-sizing:border-box;margin-bottom:10px}
+.login-terms{text-align:center;font-size:11px;color:#3f3f46;margin-top:20px;line-height:1.6}
