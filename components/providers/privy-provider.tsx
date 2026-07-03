@@ -1,9 +1,8 @@
 "use client";
 
 import { PrivyProvider } from "@privy-io/react-auth";
-import { useRouter } from "next/navigation";
 
-// COTI Testnet chain definition
+// COTI Testnet chain definition (viem-compatible)
 const cotiTestnet = {
   id: 7082400,
   name: "COTI Testnet",
@@ -17,34 +16,25 @@ const cotiTestnet = {
   testnet: true,
 } as const;
 
-export function AppPrivyProvider({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
-  const appId = process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? "cmqdk2v9000mv0dl45vty4gj9";
+const PRIVY_APP_ID =
+  process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? "cmqdk2v9000mv0dl45vty4gj9";
 
+export function AppPrivyProvider({ children }: { children: React.ReactNode }) {
   return (
     <PrivyProvider
-      appId={appId}
+      appId={PRIVY_APP_ID}
       config={{
         appearance: {
           theme: "dark",
           accentColor: "#ffffff",
-          logo: undefined,
-          landingHeader: "Sign in to FlaunchTQ",
-          loginMessage: "AI Agent Marketplace on COTI",
-          showWalletLoginFirst: false,
         },
         loginMethods: ["email", "google", "twitter", "wallet"],
         embeddedWallets: {
           createOnLogin: "users-without-wallets",
-          requireUserPasswordOnCreate: false,
         },
         defaultChain: cotiTestnet,
         supportedChains: [cotiTestnet],
-        externalWallets: {
-          coinbaseWallet: { connectionOptions: "smartWalletOnly" },
-        },
       }}
-      onSuccess={() => router.push("/")}
     >
       {children}
     </PrivyProvider>
