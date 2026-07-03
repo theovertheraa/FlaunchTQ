@@ -195,13 +195,13 @@ export default function AgentPage({ params }: Props) {
         </div>
         <div className="trade-sheet-body">
           <div className="trade-wallet-row" id="sheetBalance">
-            Balance: <span>$10,000.00</span>
+            Balance: <span>10,000 COTI</span>
           </div>
           <div style={{ fontSize: 11, color: "#52525b", marginBottom: 10 }} id="sheetPnl">
             No position
           </div>
           <div style={{ fontSize: 11, color: "#71717a", marginBottom: 6 }} id="sheetLabel">
-            Amount (USDT)
+            Amount (COTI)
           </div>
           <div className="trade-pct-row">
             <button className="trade-pct" data-pct="25">25%</button>
@@ -209,7 +209,7 @@ export default function AgentPage({ params }: Props) {
             <button className="trade-pct" data-pct="75">75%</button>
             <button className="trade-pct" data-pct="100">Max</button>
           </div>
-          <input id="sheetAmt" type="number" className="trade-input" placeholder="USDT to spend" min="0" />
+          <input id="sheetAmt" type="number" className="trade-input" placeholder="COTI to spend" min="0" />
           <div id="sheetEst" className="trade-est" />
           <button id="sheetExecBtn" className="trade-exec-btn buy">
             Buy {agent.ticker}

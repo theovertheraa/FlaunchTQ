@@ -54,7 +54,7 @@ export default function PortfolioPage() {
   const [tab, setTab] = useState<"holdings" | "onchain">("holdings");
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [trades, setTrades] = useState<Trade[]>([]);
-  const [usdt, setUsdt] = useState(10000);
+  const [coti, setCoti] = useState(10000);
 
   // On-chain state
   const [onchainAddr, setOnchainAddr] = useState<string | null>(null);
@@ -67,7 +67,7 @@ export default function PortfolioPage() {
   function loadWallet() {
     const w = (window as any).NovusWallet;
     if (!w) return;
-    setUsdt(w.getUSDTO());
+    setCoti(w.getCOTI() ?? 10000);
     const all = w.getAllHoldings() as Record<string, any>;
     const list: Holding[] = Object.entries(all).map(([key, h]: [string, any]) => ({
       key, ticker: h.ticker, name: h.name || h.ticker,
@@ -166,7 +166,7 @@ export default function PortfolioPage() {
   }
 
   const totalHoldingsVal = holdings.reduce((s, h) => s + h.qty * h.avgCost, 0);
-  const totalVal = usdt + totalHoldingsVal;
+  const totalVal = coti + totalHoldingsVal;
   const pnl = totalVal - 10000;
 
   return (
@@ -214,7 +214,7 @@ export default function PortfolioPage() {
               {[
                 { label: "Total Value", val: fmtUSD(totalVal) },
                 { label: "P&L", val: fmtUSD(pnl), color: pnl >= 0 ? "#34d399" : "#f87171" },
-                { label: "USDT Balance", val: fmtUSD(usdt) },
+                { label: "COTI Balance", val: coti.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " COTI" },
                 { label: "Positions", val: String(holdings.length) },
               ].map(({ label, val, color }) => (
                 <div key={label} className="port-stat">

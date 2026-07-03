@@ -3,7 +3,7 @@
 
 (function () {
   const KEY = "novus_wallet_v1";
-  const STARTING_USDT = 10_000;
+  const STARTING_COTI = 10_000;
 
   function load() {
     try {
@@ -14,7 +14,7 @@
   }
 
   function defaultState() {
-    return { v: 1, usdt: STARTING_USDT, holdings: {}, trades: [] };
+    return { v: 1, usdt: STARTING_COTI, holdings: {}, trades: [] };
   }
 
   let _w = load() || defaultState();
@@ -23,7 +23,7 @@
     try { localStorage.setItem(KEY, JSON.stringify(_w)); } catch(e) {}
   }
 
-  function getUSDTO()     { return _w.usdt; }
+  function getCOTI()      { return _w.usdt; }
   function getHolding(k)  { return _w.holdings[k] || { qty: 0, avgCost: 0 }; }
   function getAllHoldings(){ return _w.holdings; }
   function getTrades()    { return _w.trades; }
@@ -31,7 +31,7 @@
   // key = TICKER_SEED (unique per token)
   function buy(key, usd, price, meta) {
     usd = Math.min(usd, _w.usdt);
-    if (usd < 0.01) return { ok: false, msg: "Insufficient USDT balance" };
+    if (usd < 0.01) return { ok: false, msg: "Insufficient COTI balance" };
     const qty       = usd / price;
     const existing  = _w.holdings[key] || { qty: 0, avgCost: 0, ...meta };
     const totalQty  = existing.qty + qty;
@@ -77,7 +77,8 @@
   }
 
   window.NovusWallet = {
-    getUSDTO,
+    getCOTI,
+    getUSDTO: getCOTI, // backward compat
     getHolding,
     getAllHoldings,
     getTrades,
@@ -85,6 +86,7 @@
     sell,
     reset,
     portfolioValue,
-    startingUSDTO: STARTING_USDT,
+    startingCOTI: STARTING_COTI,
+    startingUSDTO: STARTING_COTI, // backward compat
   };
 })();

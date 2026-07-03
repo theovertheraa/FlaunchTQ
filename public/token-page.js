@@ -230,8 +230,8 @@ function setSheetTab(mode) {
   if (mode === "buy") {
     btn.textContent = "Buy " + E.ticker;
     btn.className   = "trade-exec-btn buy";
-    document.getElementById("sheetLabel").textContent = "Amount (USDT)";
-    document.getElementById("sheetAmt").placeholder   = "USDT to spend";
+    document.getElementById("sheetLabel").textContent = "Amount (COTI)";
+    document.getElementById("sheetAmt").placeholder   = "COTI to spend";
   } else {
     btn.textContent = "Sell " + E.ticker;
     btn.className   = "trade-exec-btn sell";
@@ -245,7 +245,7 @@ function setSheetTab(mode) {
 
 function refreshSheet() {
   const price   = E.price();
-  const balance = W.getUSDTO();
+  const balance = W.getCOTI();
   const holding = W.getHolding(TOKEN_KEY);
   const holdVal = holding.qty * price;
   const pnl     = holding.qty > 0 ? ((price - holding.avgCost) / holding.avgCost * 100) : null;

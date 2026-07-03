@@ -16,7 +16,7 @@ export default function ProfilePage() {
   const { ready, authenticated, login, user, logout, displayName, initials, embeddedWallet, externalWallet } = useAuth();
   const { wallets } = useWallets();
   const [tradeCount, setTradeCount] = useState(0);
-  const [usdt, setUsdt] = useState(10000);
+  const [coti, setCoti] = useState(10000);
   const [holdingCount, setHoldingCount] = useState(0);
 
   const loginType = user?.google ? "Google" : user?.twitter ? "X / Twitter" : user?.email ? "Email" : "Wallet";
@@ -26,7 +26,7 @@ export default function ProfilePage() {
       <Script src="/wallet.js" strategy="afterInteractive" onLoad={() => {
         const w = (window as any).NovusWallet;
         if (!w) return;
-        setUsdt(w.getUSDTO());
+        setCoti(w.getCOTI() ?? w.getUSDTO());
         setTradeCount(w.getTrades().length);
         setHoldingCount(Object.keys(w.getAllHoldings()).length);
       }} />
@@ -97,8 +97,8 @@ export default function ProfilePage() {
               <div className="metric-val">{holdingCount}</div>
             </div>
             <div className="stat-pill">
-              <div className="metric-label">USDT Balance</div>
-              <div className="metric-val">${usdt.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
+              <div className="metric-label">COTI Balance</div>
+              <div className="metric-val">{coti.toLocaleString(undefined, { maximumFractionDigits: 2 })} COTI</div>
             </div>
             <div className="stat-pill">
               <div className="metric-label">Total Trades</div>
