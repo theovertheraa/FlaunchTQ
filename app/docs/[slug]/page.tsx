@@ -6,13 +6,14 @@ export function generateStaticParams() {
   return getAllSlugs().map(slug => ({ slug }));
 }
 
-export default function DocPage({ params }: { params: { slug: string } }) {
-  const page = getDocPage(params.slug);
+export default async function DocPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const page = getDocPage(slug);
   if (!page) notFound();
 
   // Find prev/next
   const allPages = DOC_NAV.flatMap(g => g.pages);
-  const idx = allPages.findIndex(p => p.slug === params.slug);
+  const idx = allPages.findIndex(p => p.slug === slug);
   const prev = idx > 0 ? allPages[idx - 1] : null;
   const next = idx < allPages.length - 1 ? allPages[idx + 1] : null;
 
