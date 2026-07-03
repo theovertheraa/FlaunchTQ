@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/hooks/use-auth";
 
 export function Nav() {
   const pathname = usePathname();
-  const { ready, authenticated, displayName, initials, logout, login } = useAuth();
+  const { ready, authenticated, displayName, initials, login } = useAuth();
 
   const links = [
     { href: "/", label: "Home" },
