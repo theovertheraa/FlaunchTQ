@@ -113,20 +113,17 @@ export default function CreateAgentPage() {
 
         {/* Sidebar */}
         <div className="grid gap-4 content-start">
-          {[
-            [Sparkles, "Automated launch", "Token deployed to COTI Testnet with UniswapV2 liquidity in 2 steps."],
-            [Wallet, "Embedded wallet ready", "Your Privy wallet handles signing — no MetaMask required."],
-            [Upload, "Media pipeline", "Avatar and listing media support coming soon."],
-          ].map(([Icon, title, text]) => {
-            const Cmp = Icon as typeof Sparkles;
-            return (
-              <div key={title as string} className="rounded-2xl border border-white/8 bg-zinc-950 p-5">
-                <Cmp className="h-5 w-5 text-zinc-400" />
-                <h2 className="mt-4 text-base font-medium text-white">{title as string}</h2>
-                <p className="mt-2 text-sm leading-6 text-zinc-500">{text as string}</p>
-              </div>
-            );
-          })}
+          {([
+            { icon: Sparkles, title: "Automated launch", text: "Token deployed to COTI Testnet with UniswapV2 liquidity in 2 steps." },
+            { icon: Wallet, title: "Embedded wallet ready", text: "Your Privy wallet handles signing — no MetaMask required." },
+            { icon: Upload, title: "Media pipeline", text: "Avatar and listing media support coming soon." },
+          ] as const).map(({ icon: Icon, title, text }) => (
+            <div key={title} className="rounded-2xl border border-white/8 bg-zinc-950 p-5">
+              <Icon className="h-5 w-5 text-zinc-400" />
+              <h2 className="mt-4 text-base font-medium text-white">{title}</h2>
+              <p className="mt-2 text-sm leading-6 text-zinc-500">{text}</p>
+            </div>
+          ))}
         </div>
       </div>
     </SiteShell>
