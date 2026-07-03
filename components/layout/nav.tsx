@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/hooks/use-auth";
 
 export function Nav() {
   const pathname = usePathname();
-  const { ready, authenticated, displayName, initials, login } = useAuth();
+  const { authenticated, displayName, initials, logout, login } = useAuth();
 
   const links = [
     { href: "/", label: "Home" },
@@ -40,10 +40,7 @@ export function Nav() {
             ))}
           </nav>
 
-          {!ready ? (
-            // Hide during Privy init to avoid login-button flash
-            <div style={{ width: 80 }} />
-          ) : authenticated ? (
+          {authenticated ? (
             <Link
               href="/profile"
               className="nav-cta"
