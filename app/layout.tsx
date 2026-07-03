@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { AppPrivyProvider } from "@/components/providers/privy-provider";
+import { Nav } from "@/components/layout/nav";
 
 export const metadata: Metadata = {
   title: "FlaunchTQ — AI Agent Marketplace",
@@ -11,7 +12,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en">
       <body>
-        <AppPrivyProvider>{children}</AppPrivyProvider>
+        <AppPrivyProvider>
+          <Nav />
+          {children}
+        </AppPrivyProvider>
       </body>
     </html>
   );

@@ -1,129 +1,221 @@
+"use client";
+
+import { useEffect } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
-import { SiteShell } from "@/components/layout/site-shell";
-import { getAgentBySlug } from "@/lib/mock/agents";
+import { use } from "react";
+import { getAgentBySlug } from "@/lib/mock/all-agents";
 
-export default async function AgentProfilePage({
-  params,
-}: {
+interface Props {
   params: Promise<{ slug: string }>;
-}) {
-  const { slug } = await params;
-  const agent = getAgentBySlug(slug);
+}
 
+function loadScript(src: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const existing = document.querySelector(`script[data-src="${src}"]`);
+    if (existing) { existing.remove(); }
+    const s = document.createElement("script");
+    s.src = src;
+    s.setAttribute("data-src", src);
+    s.onload = () => resolve();
+    s.onerror = reject;
+    document.body.appendChild(s);
+  });
+}
+
+export default function AgentPage({ params }: Props) {
+  const { slug } = use(params);
+  const agent = getAgentBySlug(slug);
   if (!agent) notFound();
 
-  const statusColor =
-    agent.status === "Live"
-      ? "text-emerald-400 border-emerald-500/20 bg-emerald-500/8"
-      : agent.status === "Bonding"
-        ? "text-amber-400 border-amber-500/20 bg-amber-500/8"
-        : "text-sky-400 border-sky-500/20 bg-sky-500/8";
+  useEffect(() => {
+    // Inject AGENT_CFG
+    const cfgScript = document.createElement("script");
+    cfgScript.id = "agent-cfg";
+    const existing = document.getElementById("agent-cfg");
+    if (existing) existing.remove();
+    cfgScript.textContent = `window.AGENT_CFG=${JSON.stringify({
+      ticker:   agent.ticker,
+      color:    agent.color,
+      seed:     agent.seed,
+      status:   agent.status,
+      supply:   agent.supply,
+      launchMC: agent.launchMC,
+      name:     agent.name,
+      slug:     agent.slug,
+    })};`;
+    document.head.appendChild(cfgScript);
+
+    // Load scripts sequentially — order matters
+    async function boot() {
+      try {
+        await loadScript("https://cdn.jsdelivr.net/npm/ethers@6.13.2/dist/ethers.umd.min.js");
+        await loadScript("/web3.js");
+        await loadScript("/token-engine.js");
+        await loadScript("/wallet.js");
+        await loadScript("/token-page.js");
+        await loadScript("/auth.js");
+      } catch (e) {
+        console.error("Script load error:", e);
+      }
+    }
+    boot();
+
+    return () => {
+      // Cleanup scripts on unmount
+      ["/web3.js", "/token-engine.js", "/wallet.js", "/token-page.js", "/auth.js"].forEach(src => {
+        const el = document.querySelector(`script[data-src="${src}"]`);
+        if (el) el.remove();
+      });
+    };
+  }, [slug]); // re-run when slug changes
 
   return (
-    <SiteShell>
-      <div className="space-y-6">
-        {/* Back */}
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 text-xs text-zinc-500 hover:text-zinc-300 transition"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          Back to marketplace
-        </Link>
+    <>
+      <div className="wrap">
+        <a href="/" style={{ fontSize: 13, color: "#52525b", display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 28 }}>
+          ← Back
+        </a>
 
-        <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-          {/* Agent info */}
-          <div className="rounded-3xl border border-white/8 bg-zinc-950 p-6 sm:p-8">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <div className="flex items-center gap-4">
-                <div className="flex h-16 w-16 items-center justify-center rounded-3xl border border-white/10 bg-black text-xl font-bold text-white">
-                  {agent.avatar}
-                </div>
-                <div>
-                  <h1 className="text-3xl font-semibold text-white">{agent.name}</h1>
-                  <p className="mt-1 text-sm text-zinc-500">
-                    {agent.category} · ${agent.token}
-                  </p>
-                </div>
-              </div>
-              <span
-                className={`inline-flex items-center self-start rounded-full border px-3 py-1 text-xs font-medium ${statusColor}`}
-              >
-                {agent.status}
-              </span>
+        {/* Header */}
+        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "flex-start", gap: 24, marginBottom: 28 }}>
+          <div style={{ display: "flex", gap: 20, alignItems: "flex-start" }}>
+            <div
+              className="avatar"
+              style={{
+                width: 68, height: 68, borderRadius: 24, fontSize: 20, flexShrink: 0,
+                background: `linear-gradient(135deg,${agent.color}22,${agent.color}11)`,
+                borderColor: `${agent.color}33`, color: agent.color,
+              }}
+            >
+              {agent.init}
             </div>
-
-            <p className="mt-6 max-w-2xl text-sm leading-7 text-zinc-400">
-              {agent.description}
-            </p>
-
-            <div className="mt-8 grid gap-3 sm:grid-cols-2">
-              {[
-                ["Market Cap", agent.marketCap],
-                ["24h Volume", agent.volume],
-                ["Total Trades", agent.trades.toLocaleString()],
-                ["Followers", agent.followers],
-              ].map(([label, value]) => (
-                <div
-                  key={label}
-                  className="rounded-2xl border border-white/6 bg-black p-4"
-                >
-                  <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">
-                    {label}
-                  </p>
-                  <p className="mt-2 text-base font-medium text-white">{value}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Trade panel placeholder */}
-          <div className="rounded-3xl border border-white/8 bg-zinc-950 p-6 space-y-6">
             <div>
-              <p className="text-xs uppercase tracking-widest text-zinc-500">
-                Token Price
-              </p>
-              <p className="mt-2 text-4xl font-semibold text-white">$0.000274</p>
-              <p className="mt-1 text-xs text-emerald-400">+8.42% (7D)</p>
-            </div>
-
-            <div className="space-y-3">
-              <p className="text-xs uppercase tracking-widest text-zinc-500">
-                Quick Trade
-              </p>
-              <div className="flex gap-2">
-                <button className="flex-1 rounded-2xl bg-emerald-500 py-3 text-sm font-semibold text-black hover:bg-emerald-400 transition">
-                  Buy
-                </button>
-                <button className="flex-1 rounded-2xl border border-white/10 bg-black py-3 text-sm text-zinc-300 hover:bg-zinc-900 transition">
-                  Sell
-                </button>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                <h1 style={{ margin: 0, fontSize: 28, fontWeight: 660, letterSpacing: "-.04em", color: "#fff" }}>
+                  {agent.name}
+                </h1>
+                <span
+                  className={`badge ${agent.status === "live" ? "status-live" : agent.status === "bonding" ? "status-bonding" : "status-deploying"}`}
+                  style={{ fontSize: 10 }}
+                >
+                  {agent.status.charAt(0).toUpperCase() + agent.status.slice(1)}
+                </span>
               </div>
-              <p className="text-xs text-zinc-600 text-center">
-                Connect wallet to trade on COTI Testnet
+              <div style={{ marginTop: 5, fontSize: 13, color: "#52525b" }}>
+                {agent.cat} · ${agent.ticker} · <span style={{ color: agent.color }}>
+                  {agent.isNew ? "New Launch" : "Live"}
+                </span>
+              </div>
+              <p style={{ margin: "8px 0 0", fontSize: 13, color: "#71717a", maxWidth: 520, lineHeight: 1.7 }}>
+                {agent.desc}
               </p>
-            </div>
-
-            <div className="rounded-2xl border border-white/6 bg-black p-4 space-y-2">
-              <p className="text-xs uppercase tracking-widest text-zinc-500">
-                Token Info
-              </p>
-              {[
-                ["Supply", "100,000,000,000"],
-                ["Launch MC", "$20,000"],
-                ["Network", "COTI Testnet"],
-              ].map(([label, value]) => (
-                <div key={label} className="flex justify-between text-sm">
-                  <span className="text-zinc-500">{label}</span>
-                  <span className="text-white">{value}</span>
-                </div>
-              ))}
             </div>
           </div>
         </div>
+
+        {/* Stats bar */}
+        <div style={{
+          display: "flex", flexWrap: "wrap", gap: 0,
+          border: "1px solid rgba(255,255,255,.07)", borderRadius: 20,
+          overflow: "hidden", marginBottom: 20, background: "#0b0b0c",
+        }}>
+          {[
+            { label: "Price", id: "livePrice", val: `$${agent.price.toExponential(2)}`, style: { fontSize: 13 } },
+            { label: "Mkt Cap", id: "liveMC", val: agent.cap, style: {} },
+            { label: "7D", id: "liveChange", val: agent.isNew ? "New" : agent.change, style: { color: "#52525b" } },
+            { label: "Supply", id: "", val: "100B", style: {} },
+            { label: "Time", id: "simTime", val: "0s", style: { color: "#71717a", borderRight: "none" } },
+          ].map(({ label, id, val, style }, i, arr) => (
+            <div
+              key={label}
+              className="stat-pill"
+              style={{ flex: 1, minWidth: 80, borderRight: i < arr.length - 1 ? "1px solid rgba(255,255,255,.07)" : "none" }}
+            >
+              <div className="metric-label">{label}</div>
+              <div className="metric-val" id={id || undefined} style={{ fontSize: 16, marginTop: 5, ...style }}>{val}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Chart */}
+        <div className="chart-card" style={{ marginBottom: 16 }}>
+          <div className="chart-header" style={{ marginBottom: 14 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: "#f5f5f5" }}>${agent.ticker} / USD</div>
+              <span className="live-dot">Live</span>
+            </div>
+            <div className="tf-btns">
+              <button className="tf-btn" data-tf="1m">1m</button>
+              <button className="tf-btn" data-tf="5m">5m</button>
+              <button className="tf-btn" data-tf="15m">15m</button>
+              <button className="tf-btn" data-tf="1H">1H</button>
+            </div>
+          </div>
+          <div className="chart-wrap" style={{ height: 340 }}>
+            <canvas id="tokenCanvas" />
+          </div>
+        </div>
+
+        {/* Trade feed */}
+        <div className="trade-feed" style={{ marginBottom: 80 }}>
+          <div className="trade-feed-header">
+            <div className="trade-feed-title">Trade Activity</div>
+            <span className="live-dot">Live</span>
+          </div>
+          <div style={{ overflowX: "auto" }}>
+            <table className="trade-table">
+              <thead>
+                <tr>
+                  <th>Type</th><th>Price</th><th>Amount</th>
+                  <th>USD</th><th>Wallet</th><th>Time</th>
+                </tr>
+              </thead>
+              <tbody id="tradeFeedBody" />
+            </table>
+          </div>
+        </div>
       </div>
-    </SiteShell>
+
+      {/* Floating buy/sell bar */}
+      <div className="trade-float-bar">
+        <button id="floatBuyBtn" className="trade-float-buy">▲ Buy</button>
+        <button id="floatSellBtn" className="trade-float-sell">▼ Sell</button>
+      </div>
+
+      {/* Bottom sheet overlay */}
+      <div id="sheetOverlay" className="trade-sheet-overlay" />
+
+      {/* Bottom sheet */}
+      <div id="tradeSheet" className="trade-sheet">
+        <div className="trade-sheet-handle" />
+        <div className="trade-sheet-tabs">
+          <div id="tabBuy" className="trade-tab buy active">Buy</div>
+          <div id="tabSell" className="trade-tab sell">Sell</div>
+        </div>
+        <div className="trade-sheet-body">
+          <div className="trade-wallet-row" id="sheetBalance">
+            Balance: <span>$10,000.00</span>
+          </div>
+          <div style={{ fontSize: 11, color: "#52525b", marginBottom: 10 }} id="sheetPnl">
+            No position
+          </div>
+          <div style={{ fontSize: 11, color: "#71717a", marginBottom: 6 }} id="sheetLabel">
+            Amount (USDT)
+          </div>
+          <div className="trade-pct-row">
+            <button className="trade-pct" data-pct="25">25%</button>
+            <button className="trade-pct" data-pct="50">50%</button>
+            <button className="trade-pct" data-pct="75">75%</button>
+            <button className="trade-pct" data-pct="100">Max</button>
+          </div>
+          <input id="sheetAmt" type="number" className="trade-input" placeholder="USDT to spend" min="0" />
+          <div id="sheetEst" className="trade-est" />
+          <button id="sheetExecBtn" className="trade-exec-btn buy">
+            Buy {agent.ticker}
+          </button>
+        </div>
+      </div>
+    </>
   );
 }

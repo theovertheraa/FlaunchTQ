@@ -1,97 +1,158 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import Script from "next/script";
+import Link from "next/link";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { useWallets } from "@privy-io/react-auth";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-import { SiteShell } from "@/components/layout/site-shell";
+
+function fmtNum(n: number) {
+  if (n >= 1e6) return (n / 1e6).toFixed(2) + "M";
+  if (n >= 1e3) return (n / 1e3).toFixed(1) + "K";
+  return n.toFixed(2);
+}
 
 export default function ProfilePage() {
-  const { ready, authenticated, user, logout, displayName, initials, embeddedWallet, externalWallet } = useAuth();
+  const { ready, authenticated, user, logout, displayName, initials, embeddedWallet, externalWallet, activeWallet } = useAuth();
   const { wallets } = useWallets();
   const router = useRouter();
+  const [tradeCount, setTradeCount] = useState(0);
+  const [usdt, setUsdt] = useState(10000);
+  const [holdingCount, setHoldingCount] = useState(0);
 
   useEffect(() => {
     if (ready && !authenticated) router.replace("/login");
   }, [ready, authenticated, router]);
 
-  if (!ready || !authenticated || !user) {
-    return (
-      <SiteShell>
-        <div className="flex h-40 items-center justify-center">
-          <div className="h-6 w-32 animate-pulse rounded-xl bg-zinc-800" />
-        </div>
-      </SiteShell>
-    );
-  }
-
-  const loginMethod = user.google
-    ? "Google"
-    : user.twitter
-      ? "X / Twitter"
-      : user.email
-        ? "Email"
-        : "Wallet";
+  const loginType = user?.google ? "Google" : user?.twitter ? "X / Twitter" : user?.email ? "Email" : "Wallet";
 
   return (
-    <SiteShell>
-      <div className="mx-auto max-w-2xl space-y-6">
-        {/* Avatar + name */}
-        <div className="flex items-center gap-5 rounded-3xl border border-white/8 bg-zinc-950 p-6">
-          <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-white text-xl font-bold text-black">
-            {initials}
-          </div>
-          <div className="flex-1 min-w-0">
-            <h1 className="text-2xl font-semibold text-white truncate">{displayName}</h1>
-            <p className="mt-1 text-sm text-zinc-500">Signed in via {loginMethod}</p>
-          </div>
-          <button
-            onClick={logout}
-            className="shrink-0 rounded-xl border border-white/8 bg-black px-4 py-2 text-xs text-zinc-400 hover:text-white transition"
-          >
-            Sign out
-          </button>
-        </div>
+    <>
+      <Script src="/wallet.js" strategy="afterInteractive" onLoad={() => {
+        const w = (window as any).NovusWallet;
+        if (!w) return;
+        setUsdt(w.getUSDTO());
+        setTradeCount(w.getTrades().length);
+        setHoldingCount(Object.keys(w.getAllHoldings()).length);
+      }} />
+      <Script src="/auth.js" strategy="afterInteractive" />
 
-        {/* Wallets */}
-        <div className="rounded-3xl border border-white/8 bg-zinc-950 p-6 space-y-4">
-          <h2 className="text-sm font-semibold uppercase tracking-widest text-zinc-500">Wallets</h2>
+      {(!ready || (ready && authenticated && user)) && (
+        <div id="pageWrap" className="wrap">
 
-          {embeddedWallet && (
-            <div className="rounded-2xl border border-white/6 bg-black p-4">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs uppercase tracking-widest text-zinc-500">Embedded Wallet</span>
-                <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-400 border border-emerald-500/20">
-                  Auto-created · Privy
-                </span>
+          {/* PROFILE HEADER */}
+          <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "flex-start", gap: 24, marginBottom: 32 }}>
+            <div style={{ display: "flex", gap: 20, alignItems: "flex-start" }}>
+              <div
+                className="avatar"
+                style={{ width: 72, height: 72, borderRadius: 26, fontSize: 22, flexShrink: 0, background: "#6ee7b7", color: "#000" }}
+              >
+                {initials}
               </div>
-              <p className="mt-2 font-mono text-sm text-white break-all">{embeddedWallet.address}</p>
-              <p className="mt-1 text-xs text-zinc-600">COTI Testnet · Self-custodial</p>
-            </div>
-          )}
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                  <h1 style={{ margin: 0, fontSize: 32, fontWeight: 660, letterSpacing: "-.04em", color: "#fff" }}>
+                    {displayName}
+                  </h1>
+                  <span className="badge">Trader</span>
+                </div>
+                <div style={{ marginTop: 6, fontSize: 13, color: "#52525b" }}>
+                  via {loginType}
+                </div>
 
-          {externalWallet && (
-            <div className="rounded-2xl border border-white/6 bg-black p-4">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs uppercase tracking-widest text-zinc-500">External Wallet</span>
-                <span className="rounded-full bg-blue-500/10 px-2 py-0.5 text-[10px] font-medium text-blue-400 border border-blue-500/20">
-                  {externalWallet.walletClientType}
-                </span>
+                {/* Embedded wallet row */}
+                {embeddedWallet && (
+                  <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 3 }}>
+                    <div style={{ fontSize: 11, color: "#3f3f46", textTransform: "uppercase", letterSpacing: ".1em" }}>Embedded Wallet</div>
+                    <div style={{ fontFamily: "monospace", fontSize: 12, color: "#a1a1aa", wordBreak: "break-all", maxWidth: 360 }}>
+                      {embeddedWallet.address}
+                    </div>
+                  </div>
+                )}
+
+                <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
+                  <button
+                    className="btn"
+                    onClick={logout}
+                    style={{ fontSize: 13, padding: "8px 16px", color: "#f87171", borderColor: "rgba(248,113,113,.2)" }}
+                  >
+                    Logout
+                  </button>
+                </div>
               </div>
-              <p className="mt-2 font-mono text-sm text-white break-all">{externalWallet.address}</p>
             </div>
-          )}
+          </div>
 
-          {wallets.length === 0 && (
-            <p className="text-sm text-zinc-500">No wallets linked yet.</p>
-          )}
-        </div>
+          {/* STATS ROW */}
+          <div style={{
+            display: "flex", flexWrap: "wrap", gap: 0,
+            border: "1px solid rgba(255,255,255,.07)", borderRadius: 20,
+            overflow: "hidden", marginBottom: 28, background: "#0b0b0c",
+          }}>
+            <div className="stat-pill">
+              <div className="metric-label">Positions</div>
+              <div className="metric-val">{holdingCount}</div>
+            </div>
+            <div className="stat-pill">
+              <div className="metric-label">USDT Balance</div>
+              <div className="metric-val">${usdt.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
+            </div>
+            <div className="stat-pill">
+              <div className="metric-label">Total Trades</div>
+              <div className="metric-val">{tradeCount}</div>
+            </div>
+            <div className="stat-pill" style={{ borderRight: "none" }}>
+              <div className="metric-label">Login Type</div>
+              <div className="metric-val">{loginType}</div>
+            </div>
+          </div>
 
-        {/* Linked accounts */}
-        <div className="rounded-3xl border border-white/8 bg-zinc-950 p-6 space-y-4">
-          <h2 className="text-sm font-semibold uppercase tracking-widest text-zinc-500">Linked Accounts</h2>
-          <div className="space-y-3">
-            {user.linkedAccounts.map((account, i) => {
+          {/* WALLETS */}
+          <div style={{ marginBottom: 10, fontSize: 13, fontWeight: 600, color: "#71717a", textTransform: "uppercase", letterSpacing: ".12em" }}>
+            Wallets
+          </div>
+          <div className="agents" style={{ marginBottom: 28 }}>
+            {embeddedWallet && (
+              <div style={{ padding: "16px 20px", borderBottom: "1px solid rgba(255,255,255,.05)" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                  <span style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", color: "#52525b" }}>Embedded Wallet</span>
+                  <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 999, background: "rgba(52,211,153,.1)", border: "1px solid rgba(52,211,153,.2)", color: "#34d399" }}>
+                    Auto-created · Privy
+                  </span>
+                </div>
+                <div style={{ fontFamily: "monospace", fontSize: 13, color: "#f5f5f5", wordBreak: "break-all" }}>
+                  {embeddedWallet.address}
+                </div>
+                <div style={{ marginTop: 4, fontSize: 11, color: "#3f3f46" }}>COTI Testnet · Self-custodial</div>
+              </div>
+            )}
+            {externalWallet && (
+              <div style={{ padding: "16px 20px" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                  <span style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".1em", color: "#52525b" }}>External Wallet</span>
+                  <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 999, background: "rgba(147,197,253,.1)", border: "1px solid rgba(147,197,253,.2)", color: "#93c5fd" }}>
+                    {externalWallet.walletClientType}
+                  </span>
+                </div>
+                <div style={{ fontFamily: "monospace", fontSize: 13, color: "#f5f5f5", wordBreak: "break-all" }}>
+                  {externalWallet.address}
+                </div>
+              </div>
+            )}
+            {wallets.length === 0 && (
+              <div style={{ padding: 32, textAlign: "center", color: "#3f3f46", fontSize: 14 }}>
+                No wallets linked — login creates one automatically
+              </div>
+            )}
+          </div>
+
+          {/* LINKED ACCOUNTS */}
+          <div style={{ marginBottom: 10, fontSize: 13, fontWeight: 600, color: "#71717a", textTransform: "uppercase", letterSpacing: ".12em" }}>
+            Linked Accounts
+          </div>
+          <div className="agents" style={{ marginBottom: 28 }}>
+            {user?.linkedAccounts.map((account, i) => {
               const label =
                 "address" in account && typeof account.address === "string"
                   ? account.address
@@ -99,22 +160,30 @@ export default function ProfilePage() {
                     ? account.email
                     : "verified";
               return (
-                <div
-                  key={i}
-                  className="flex items-center justify-between rounded-2xl border border-white/6 bg-black px-4 py-3"
-                >
-                  <span className="text-sm text-zinc-300 capitalize">
+                <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 20px", borderBottom: "1px solid rgba(255,255,255,.04)" }}>
+                  <span style={{ fontSize: 14, color: "#d4d4d8", textTransform: "capitalize" }}>
                     {account.type.replace(/_/g, " ")}
                   </span>
-                  <span className="text-xs text-zinc-600 font-mono truncate max-w-[200px]">
+                  <span style={{ fontSize: 12, color: "#52525b", fontFamily: "monospace", maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {label}
                   </span>
                 </div>
               );
             })}
           </div>
+
+          {/* DEPLOYED TOKENS */}
+          <div style={{ marginBottom: 10, fontSize: 13, fontWeight: 600, color: "#71717a", textTransform: "uppercase", letterSpacing: ".12em" }}>
+            My Deployed Tokens
+          </div>
+          <div className="agents" style={{ marginBottom: 80 }}>
+            <div style={{ padding: 32, textAlign: "center", color: "#3f3f46", fontSize: 14 }}>
+              No deployed tokens yet — <Link href="/create-agent" style={{ color: "#52525b" }}>launch one →</Link>
+            </div>
+          </div>
+
         </div>
-      </div>
-    </SiteShell>
+      )}
+    </>
   );
 }
