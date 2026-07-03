@@ -35,7 +35,7 @@ export const DOC_NAV: { group: string; pages: DocSection[] }[] = [
     pages: [
       { slug: "buying-selling", title: "Buying & Selling", group: "Trading" },
       { slug: "portfolio", title: "Portfolio", group: "Trading" },
-      { slug: "mock-trading", title: "Mock Trading (USDT)", group: "Trading" },
+      { slug: "mock-trading", title: "Mock Trading (COTI)", group: "Trading" },
     ],
   },
   {
@@ -94,14 +94,14 @@ export const DOC_PAGES: Record<string, DocPage> = {
 <ol>
   <li><strong>Browse</strong> — Explore the agent marketplace on the home page. Filter by All, Trending, New, or Volume.</li>
   <li><strong>Research</strong> — Click any agent to see its price chart, live trade feed, market cap, and 24h volume.</li>
-  <li><strong>Trade</strong> — Buy or sell agent tokens using USDT (mock) or on-chain COTI.</li>
+  <li><strong>Trade</strong> — Buy or sell agent tokens using COTI (mock) or on-chain COTI.</li>
   <li><strong>Launch</strong> — Create your own agent by filling out the form and deploying a token on COTI Testnet.</li>
 </ol>
 
 <h2>Mock Trading vs On-Chain</h2>
 <p>FlaunchTQ supports two trading modes:</p>
 <ul>
-  <li><strong>Mock Trading</strong> — Uses a simulated USDT balance ($10,000 on signup). No real money, great for exploring.</li>
+  <li><strong>Mock Trading</strong> — Uses a simulated COTI balance ($10,000 on signup). No real money, great for exploring.</li>
   <li><strong>On-Chain</strong> — Real transactions on COTI Testnet. Requires a connected wallet and COTI testnet tokens.</li>
 </ul>
 
@@ -255,10 +255,10 @@ export const DOC_PAGES: Record<string, DocPage> = {
 <h1>Buying & Selling</h1>
 
 <h2>Mock Trading</h2>
-<p>All users start with a <strong>$10,000 USDT</strong> mock balance. This lets you trade without real money.</p>
+<p>All users start with a <strong>10,000 COTI</strong> mock balance. This lets you trade without real money.</p>
 <ul>
-  <li>Buy any agent token with USDT</li>
-  <li>Sell tokens back to USDT at current price</li>
+  <li>Buy any agent token with COTI</li>
+  <li>Sell tokens back to COTI at current price</li>
   <li>Holdings tracked in Portfolio</li>
   <li>Trade history saved locally</li>
 </ul>
@@ -278,7 +278,7 @@ export const DOC_PAGES: Record<string, DocPage> = {
   <li>Tap the <strong>Sell</strong> tab</li>
   <li>Enter token amount to sell</li>
   <li>Tap <strong>Sell $TICKER</strong></li>
-  <li>USDT balance increases</li>
+  <li>COTI balance increases</li>
 </ol>
 
 <h2>Slippage</h2>
@@ -294,9 +294,9 @@ export const DOC_PAGES: Record<string, DocPage> = {
 
 <h2>Stats Row</h2>
 <ul>
-  <li><strong>Total Value</strong> — USDT balance + current value of all holdings</li>
+  <li><strong>Total Value</strong> — COTI balance + current value of all holdings</li>
   <li><strong>P&L</strong> — Profit/loss vs your starting $10,000</li>
-  <li><strong>USDT Balance</strong> — Available mock USDT</li>
+  <li><strong>COTI Balance</strong> — Available mock COTI</li>
   <li><strong>Positions</strong> — Number of different tokens held</li>
 </ul>
 
@@ -312,13 +312,13 @@ export const DOC_PAGES: Record<string, DocPage> = {
   },
   "mock-trading": {
     slug: "mock-trading",
-    title: "Mock Trading (USDT)",
+    title: "Mock Trading (COTI)",
     content: `
-<h1>Mock Trading (USDT)</h1>
-<p>FlaunchTQ lets you trade with simulated USDT so you can explore the platform without spending real money.</p>
+<h1>Mock Trading (COTI)</h1>
+<p>FlaunchTQ lets you trade with simulated COTI so you can explore the platform without spending real money.</p>
 
 <h2>Starting Balance</h2>
-<p>Every account starts with <strong>$10,000 USDT</strong> mock balance. This resets if your browser data is cleared.</p>
+<p>Every account starts with <strong>10,000 COTI</strong> mock balance. This resets if your browser data is cleared.</p>
 
 <h2>How It Works</h2>
 <p>The mock wallet (<code>NovusWallet</code>) runs entirely in the browser:</p>
@@ -333,7 +333,7 @@ export const DOC_PAGES: Record<string, DocPage> = {
 <ul>
   <li>Balances are browser-local — clearing localStorage resets everything</li>
   <li>Not synced across devices</li>
-  <li>Cannot withdraw or transfer mock USDT</li>
+  <li>Cannot withdraw or transfer mock COTI</li>
 </ul>
     `,
   },
@@ -420,7 +420,7 @@ export const DOC_PAGES: Record<string, DocPage> = {
 <h1>FAQ</h1>
 
 <h2>Is this real money?</h2>
-<p>No. The mock trading uses simulated USDT ($10,000 starting balance) stored in your browser. On-chain features use COTI Testnet which uses test tokens with no real monetary value.</p>
+<p>No. The mock trading uses simulated COTI ($10,000 starting balance) stored in your browser. On-chain features use COTI Testnet which uses test tokens with no real monetary value.</p>
 
 <h2>Why do I need to login?</h2>
 <p>Login is required to trade, create agents, and view your portfolio. FlaunchTQ uses Privy for authentication — it supports Google, X, Wallet, and Email login.</p>

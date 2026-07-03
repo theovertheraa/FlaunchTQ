@@ -26,7 +26,7 @@ export default function ProfilePage() {
       <Script src="/wallet.js" strategy="afterInteractive" onLoad={() => {
         const w = (window as any).NovusWallet;
         if (!w) return;
-        setCoti(w.getCOTI() ?? w.getUSDTO());
+        setCoti(w.getCOTI() ?? 10000);
         setTradeCount(w.getTrades().length);
         setHoldingCount(Object.keys(w.getAllHoldings()).length);
       }} />

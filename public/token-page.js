@@ -412,7 +412,7 @@ function _tokenPageInit() {
       const el  = document.getElementById("sheetAmt");
       if (!el) return;
       if (_sheetMode === "buy") {
-        el.value = (W.getUSDTO() * pct).toFixed(2);
+        el.value = (W.getCOTI() * pct).toFixed(2);
       } else {
         el.value = (W.getHolding(TOKEN_KEY).qty * pct).toFixed(4);
       }
