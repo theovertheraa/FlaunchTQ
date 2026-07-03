@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Script from "next/script";
 import Link from "next/link";
 import { useAuth } from "@/lib/hooks/use-auth";
-import { useRouter } from "next/navigation";
 
 interface Holding {
   key: string;
@@ -25,6 +24,15 @@ interface Trade {
   ts: number;
 }
 
+interface OnchainToken {
+  name: string;
+  symbol: string;
+  tokenAddress: string;
+  balance: number;
+}
+
+const COLORS = ["#6ee7b7","#93c5fd","#fcd34d","#f9a8d4","#a5b4fc","#6ee7f7","#86efac"];
+
 function fmtUSD(n: number) {
   return "$" + parseFloat(String(n || 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
@@ -42,31 +50,120 @@ function timeAgo(ts: number) {
 }
 
 export default function PortfolioPage() {
-  const { ready, authenticated, login } = useAuth();
-  const router = useRouter();
+  const { ready, authenticated, login, activeWallet } = useAuth();
   const [tab, setTab] = useState<"holdings" | "onchain">("holdings");
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [trades, setTrades] = useState<Trade[]>([]);
   const [usdt, setUsdt] = useState(10000);
 
+  // On-chain state
+  const [onchainAddr, setOnchainAddr] = useState<string | null>(null);
+  const [cotiBal, setCotiBal] = useState<string | null>(null);
+  const [onchainTokens, setOnchainTokens] = useState<OnchainToken[] | null>(null);
+  const [onchainLoading, setOnchainLoading] = useState(false);
+  const [onchainError, setOnchainError] = useState<string | null>(null);
+
+  // Load mock wallet holdings
+  function loadWallet() {
+    const w = (window as any).NovusWallet;
+    if (!w) return;
+    setUsdt(w.getUSDTO());
+    const all = w.getAllHoldings() as Record<string, any>;
+    const list: Holding[] = Object.entries(all).map(([key, h]: [string, any]) => ({
+      key, ticker: h.ticker, name: h.name || h.ticker,
+      color: h.color || "#6ee7b7", slug: h.slug || h.ticker.toLowerCase(),
+      qty: h.qty, avgCost: h.avgCost,
+    }));
+    setHoldings(list);
+    setTrades(w.getTrades() as Trade[]);
+  }
+
   useEffect(() => {
     if (!ready) return;
-    // Load from NovusWallet if available
-    function loadWallet() {
-      const w = (window as any).NovusWallet;
-      if (!w) return;
-      setUsdt(w.getUSDTO());
-      const all = w.getAllHoldings() as Record<string, any>;
-      const list: Holding[] = Object.entries(all).map(([key, h]: [string, any]) => ({
-        key, ticker: h.ticker, name: h.name || h.ticker,
-        color: h.color || "#6ee7b7", slug: h.slug || h.ticker.toLowerCase(),
-        qty: h.qty, avgCost: h.avgCost,
-      }));
-      setHoldings(list);
-      setTrades(w.getTrades() as Trade[]);
-    }
     loadWallet();
   }, [ready]);
+
+  // Resolve address: prefer Privy embedded wallet, fall back to MetaMask
+  useEffect(() => {
+    if (!ready || !authenticated) return;
+    const privyAddr = activeWallet?.address ?? null;
+    setOnchainAddr(privyAddr);
+  }, [ready, authenticated, activeWallet]);
+
+  // Load on-chain data when tab is switched to onchain and address is known
+  const loadOnchain = useCallback(async (addr: string) => {
+    setOnchainLoading(true);
+    setOnchainError(null);
+    setOnchainTokens(null);
+    setCotiBal(null);
+    try {
+      const web3 = (window as any).FlaunchWeb3;
+      if (!web3) throw new Error("web3.js not loaded yet");
+
+      // COTI native balance
+      const bal = await web3.getCotiBalance(addr);
+      setCotiBal(parseFloat(bal).toFixed(4) + " COTI");
+
+      // Factory tokens
+      const { ethers } = (window as any);
+      if (!ethers) throw new Error("ethers not loaded");
+
+      const factoryAbi = [
+        "function tokenCount() view returns (uint256)",
+        "function tokens(uint256) view returns (address tokenAddress, string name, string symbol, uint256 totalSupply, address creator, string imageUrl, string description, uint256 createdAt)",
+      ];
+      const erc20Abi = ["function balanceOf(address) view returns (uint256)"];
+      const provider = await web3.getReadProvider();
+      const factory = new ethers.Contract(web3.FACTORY_ADDR, factoryAbi, provider);
+      const count = Number(await factory.tokenCount());
+
+      const rows: OnchainToken[] = [];
+      for (let i = 0; i < count; i++) {
+        try {
+          const t = await factory.tokens(i);
+          const erc = new ethers.Contract(t.tokenAddress, erc20Abi, provider);
+          const raw = await erc.balanceOf(addr);
+          const balance = Number(ethers.formatUnits(raw, 18));
+          rows.push({ name: t.name, symbol: t.symbol, tokenAddress: t.tokenAddress, balance });
+        } catch { /* skip bad token */ }
+      }
+      setOnchainTokens(rows);
+    } catch (e: any) {
+      setOnchainError(e.message?.slice(0, 100) ?? "Unknown error");
+    } finally {
+      setOnchainLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (tab === "onchain" && onchainAddr) {
+      loadOnchain(onchainAddr);
+    }
+  }, [tab, onchainAddr, loadOnchain]);
+
+  // Connect MetaMask inline (if no Privy wallet)
+  async function connectMetaMask() {
+    const eth = (window as any).ethereum;
+    if (!eth) { alert("Install MetaMask to connect a wallet."); return; }
+    try {
+      const accounts = await eth.request({ method: "eth_requestAccounts" });
+      const addr = accounts[0];
+      try {
+        await eth.request({ method: "wallet_switchEthereumChain", params: [{ chainId: "0x6C0360" }] });
+      } catch (se: any) {
+        if (se.code === 4902) {
+          await eth.request({
+            method: "wallet_addEthereumChain",
+            params: [{ chainId: "0x6C0360", chainName: "COTI Testnet",
+              nativeCurrency: { name: "COTI", symbol: "COTI", decimals: 18 },
+              rpcUrls: ["https://testnet.coti.io/rpc"],
+              blockExplorerUrls: ["https://testnet.cotiscan.io"] }],
+          });
+        }
+      }
+      setOnchainAddr(addr);
+    } catch { alert("Wallet connection cancelled."); }
+  }
 
   const totalHoldingsVal = holdings.reduce((s, h) => s + h.qty * h.avgCost, 0);
   const totalVal = usdt + totalHoldingsVal;
@@ -74,20 +171,9 @@ export default function PortfolioPage() {
 
   return (
     <>
-      <Script src="/wallet.js" strategy="afterInteractive" onLoad={() => {
-        const w = (window as any).NovusWallet;
-        if (!w) return;
-        setUsdt(w.getUSDTO());
-        const all = w.getAllHoldings() as Record<string, any>;
-        const list: Holding[] = Object.entries(all).map(([key, h]: [string, any]) => ({
-          key, ticker: h.ticker, name: h.name || h.ticker,
-          color: h.color || "#6ee7b7", slug: h.slug || h.ticker.toLowerCase(),
-          qty: h.qty, avgCost: h.avgCost,
-        }));
-        setHoldings(list);
-        setTrades(w.getTrades() as Trade[]);
-      }} />
+      <Script src="/wallet.js" strategy="afterInteractive" onLoad={loadWallet} />
       <Script src="/auth.js" strategy="afterInteractive" />
+      <Script src="/web3.js" strategy="afterInteractive" />
 
       <div className="wrap">
         {/* Header */}
@@ -96,6 +182,14 @@ export default function PortfolioPage() {
             <h1 style={{ margin: 0, fontSize: 36, fontWeight: 660, letterSpacing: "-.04em", color: "#fff" }}>Portfolio</h1>
             <p style={{ margin: "6px 0 0", fontSize: 14, color: "#52525b" }}>Your agent holdings and on-chain positions.</p>
           </div>
+          {/* On-chain address badge */}
+          {onchainAddr && (
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11, padding: "4px 12px", borderRadius: 999, background: "rgba(52,211,153,.08)", border: "1px solid rgba(52,211,153,.15)", color: "#34d399" }}>
+              <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#34d399" }} />
+              COTI Testnet · {onchainAddr.slice(0, 6)}…{onchainAddr.slice(-4)}
+              {cotiBal && <span style={{ color: "#6ee7b7", marginLeft: 4 }}>{cotiBal}</span>}
+            </div>
+          )}
         </div>
 
         {/* Not logged in */}
@@ -123,7 +217,7 @@ export default function PortfolioPage() {
                 { label: "USDT Balance", val: fmtUSD(usdt) },
                 { label: "Positions", val: String(holdings.length) },
               ].map(({ label, val, color }) => (
-                <div key={label} className="port-stat" style={{ flex: 1, minWidth: 140, padding: "18px 22px", borderRight: "1px solid rgba(255,255,255,.06)" }}>
+                <div key={label} className="port-stat">
                   <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em", color: "#52525b", marginBottom: 6 }}>{label}</div>
                   <div style={{ fontSize: 22, fontWeight: 660, letterSpacing: "-.03em", color: color || "#f5f5f5" }}>{val}</div>
                 </div>
@@ -148,7 +242,7 @@ export default function PortfolioPage() {
               ))}
             </div>
 
-            {/* Holdings */}
+            {/* Holdings tab */}
             {tab === "holdings" && (
               <>
                 <div className="agents" style={{ marginBottom: 28 }}>
@@ -213,13 +307,100 @@ export default function PortfolioPage() {
 
             {/* On-chain tab */}
             {tab === "onchain" && (
-              <div style={{ textAlign: "center", padding: "60px 0", color: "#3f3f46", fontSize: 14 }}>
-                <div style={{ fontSize: 36, marginBottom: 12 }}>⛓️</div>
-                Connect wallet to view on-chain positions on COTI Testnet.
-                <br />
-                <Link href="/profile" style={{ color: "#52525b", marginTop: 16, display: "inline-block" }}>
-                  Go to Profile →
-                </Link>
+              <div style={{ marginBottom: 80 }}>
+                {/* No wallet at all */}
+                {!onchainAddr && (
+                  <div style={{ textAlign: "center", padding: "60px 0" }}>
+                    <div style={{ fontSize: 36, marginBottom: 12 }}>⛓️</div>
+                    <div style={{ fontSize: 13, color: "#71717a", marginBottom: 16 }}>
+                      Connect a wallet to view your on-chain COTI tokens.
+                    </div>
+                    <button
+                      onClick={connectMetaMask}
+                      style={{ background: "#18181b", border: "1px solid rgba(255,255,255,.15)", color: "#f5f5f5", padding: "10px 22px", borderRadius: 12, fontSize: 13, cursor: "pointer", fontWeight: 600 }}
+                    >
+                      🔗 Connect Wallet
+                    </button>
+                    <div style={{ marginTop: 12 }}>
+                      <Link href="/profile" style={{ color: "#3f3f46", fontSize: 12 }}>
+                        Or go to Profile to see linked wallets →
+                      </Link>
+                    </div>
+                  </div>
+                )}
+
+                {/* Have address — show content */}
+                {onchainAddr && (
+                  <>
+                    {onchainLoading && (
+                      <div style={{ textAlign: "center", padding: "60px 0", color: "#52525b", fontSize: 14 }}>
+                        Loading on-chain data…
+                      </div>
+                    )}
+                    {onchainError && (
+                      <div style={{ textAlign: "center", padding: "40px 0", color: "#f87171", fontSize: 13 }}>
+                        Error loading on-chain data.<br />
+                        <span style={{ fontSize: 11, color: "#52525b" }}>{onchainError}</span>
+                      </div>
+                    )}
+                    {onchainTokens !== null && !onchainLoading && (() => {
+                      const myTokens = onchainTokens.filter(t => t.balance > 0);
+                      return myTokens.length === 0 ? (
+                        <div>
+                          <div style={{ textAlign: "center", padding: "40px 0", color: "#3f3f46", fontSize: 14 }}>
+                            You hold no on-chain tokens yet.<br />
+                            <Link href="/create-agent" style={{ color: "#52525b", fontSize: 13 }}>Launch a token →</Link>
+                          </div>
+                          {onchainTokens.length > 0 && (
+                            <div style={{ padding: "16px 20px", borderTop: "1px solid rgba(255,255,255,.05)" }}>
+                              <div style={{ fontSize: 12, color: "#52525b", marginBottom: 12 }}>
+                                {onchainTokens.length} token{onchainTokens.length !== 1 ? "s" : ""} deployed on COTI Testnet
+                              </div>
+                              {onchainTokens.map(t => (
+                                <div key={t.tokenAddress} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,.04)" }}>
+                                  <div style={{ fontSize: 13, color: "#a1a1aa" }}>{t.name} <span style={{ color: "#3f3f46" }}>{t.symbol}</span></div>
+                                  <a href={`https://testnet.cotiscan.io/address/${t.tokenAddress}`} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: "#52525b" }}>
+                                    {t.tokenAddress.slice(0, 8)}… ↗
+                                  </a>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div>
+                          {myTokens.map(t => {
+                            const color = COLORS[t.symbol.charCodeAt(0) % COLORS.length];
+                            return (
+                              <div key={t.tokenAddress} className="hold-row">
+                                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                                  <div className="token-dot" style={{ background: `${color}22`, color }}>{t.symbol.slice(0, 2)}</div>
+                                  <div>
+                                    <div style={{ fontSize: 14, fontWeight: 500, color: "#f5f5f5" }}>{t.name}</div>
+                                    <div style={{ fontSize: 11, color: "#52525b" }}>
+                                      {t.symbol} ·{" "}
+                                      <a href={`https://testnet.cotiscan.io/address/${t.tokenAddress}`} target="_blank" rel="noreferrer" style={{ color: "#3f3f46" }}>
+                                        {t.tokenAddress.slice(0, 8)}… ↗
+                                      </a>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div style={{ fontSize: 14, color: "#a1a1aa" }}>{fmtNum(t.balance)}</div>
+                                <div style={{ fontSize: 12, color: "#52525b" }}>On-chain</div>
+                                <div style={{ fontSize: 12, color: "#52525b" }}>—</div>
+                                <div>
+                                  <a href={`https://testnet.cotiscan.io/address/${t.tokenAddress}`} target="_blank" rel="noreferrer" className="btn" style={{ padding: "6px 14px", fontSize: 12, borderRadius: 10 }}>
+                                    Explorer
+                                  </a>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
+                  </>
+                )}
               </div>
             )}
           </>
