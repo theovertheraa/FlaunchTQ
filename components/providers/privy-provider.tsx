@@ -19,7 +19,7 @@ const cotiTestnet = {
 
 export function AppPrivyProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const appId = process.env.NEXT_PUBLIC_PRIVY_APP_ID!;
+  const appId = process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? "cmqdk2v9000mv0dl45vty4gj9";
 
   return (
     <PrivyProvider
