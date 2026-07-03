@@ -20,11 +20,14 @@ export function useAuth() {
   // Prefer external (MetaMask) wallet, fall back to Privy embedded
   const activeWallet = externalWallet ?? embeddedWallet;
 
-  const displayName = useMemo(() => {
-    if (!user) return null;
-    if (user.google) return user.google.name ?? user.google.email;
-    if (user.twitter) return `@${user.twitter.username}`;
-    if (user.email) return user.email.address;
+  const displayName = useMemo((): string => {
+    if (!user) return "Anon";
+    const google = user.google;
+    if (google) return (google.name ?? google.email) || "Google User";
+    const twitter = user.twitter;
+    if (twitter) return `@${twitter.username ?? "user"}`;
+    const email = user.email;
+    if (email) return email.address;
     if (activeWallet) {
       const addr = activeWallet.address;
       return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
@@ -32,15 +35,14 @@ export function useAuth() {
     return "Anon";
   }, [user, activeWallet]);
 
-  const initials = useMemo(() => {
-    if (!displayName) return "?";
+  const initials = useMemo((): string => {
     return displayName
       .replace("@", "")
       .split(" ")
-      .map((s) => s[0])
+      .map((s) => s[0] ?? "")
       .join("")
       .toUpperCase()
-      .slice(0, 2);
+      .slice(0, 2) || "?";
   }, [displayName]);
 
   return {

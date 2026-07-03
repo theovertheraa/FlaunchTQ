@@ -1,9 +1,10 @@
 "use client";
 
 import { PrivyProvider } from "@privy-io/react-auth";
+import type { Chain } from "viem";
 
-// COTI Testnet chain definition (viem-compatible)
-const cotiTestnet = {
+// COTI Testnet chain (viem Chain-compatible)
+const cotiTestnet: Chain = {
   id: 7082400,
   name: "COTI Testnet",
   nativeCurrency: { name: "COTI", symbol: "COTI", decimals: 18 },
@@ -14,7 +15,7 @@ const cotiTestnet = {
     default: { name: "CotiScan", url: "https://testnet.cotiscan.io" },
   },
   testnet: true,
-} as const;
+};
 
 const PRIVY_APP_ID =
   process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? "cmqdk2v9000mv0dl45vty4gj9";

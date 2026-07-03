@@ -1,13 +1,13 @@
 "use client";
 
 import { useAuth } from "@/lib/hooks/use-auth";
+import { useWallets } from "@privy-io/react-auth";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { SiteShell } from "@/components/layout/site-shell";
-import { useWallets } from "@privy-io/react-auth";
 
 export default function ProfilePage() {
-  const { ready, authenticated, user, logout, displayName, initials, embeddedWallet, externalWallet, activeWallet } = useAuth();
+  const { ready, authenticated, user, logout, displayName, initials, embeddedWallet, externalWallet } = useAuth();
   const { wallets } = useWallets();
   const router = useRouter();
 
@@ -83,9 +83,7 @@ export default function ProfilePage() {
           )}
 
           {wallets.length === 0 && (
-            <div className="rounded-2xl border border-white/6 bg-black p-4 text-sm text-zinc-500">
-              No wallets linked yet. Try re-logging to trigger wallet creation.
-            </div>
+            <p className="text-sm text-zinc-500">No wallets linked yet.</p>
           )}
         </div>
 
@@ -93,14 +91,27 @@ export default function ProfilePage() {
         <div className="rounded-3xl border border-white/8 bg-zinc-950 p-6 space-y-4">
           <h2 className="text-sm font-semibold uppercase tracking-widest text-zinc-500">Linked Accounts</h2>
           <div className="space-y-3">
-            {user.linkedAccounts.map((account, i) => (
-              <div key={i} className="flex items-center justify-between rounded-2xl border border-white/6 bg-black px-4 py-3">
-                <span className="text-sm text-zinc-300 capitalize">{account.type.replace(/_/g, " ")}</span>
-                <span className="text-xs text-zinc-600 font-mono truncate max-w-[200px]">
-                  {"address" in account ? account.address : "verified" in account ? "verified" : "linked"}
-                </span>
-              </div>
-            ))}
+            {user.linkedAccounts.map((account, i) => {
+              const label =
+                "address" in account && typeof account.address === "string"
+                  ? account.address
+                  : "email" in account && typeof account.email === "string"
+                    ? account.email
+                    : "verified";
+              return (
+                <div
+                  key={i}
+                  className="flex items-center justify-between rounded-2xl border border-white/6 bg-black px-4 py-3"
+                >
+                  <span className="text-sm text-zinc-300 capitalize">
+                    {account.type.replace(/_/g, " ")}
+                  </span>
+                  <span className="text-xs text-zinc-600 font-mono truncate max-w-[200px]">
+                    {label}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
