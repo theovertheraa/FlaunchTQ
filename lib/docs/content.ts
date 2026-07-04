@@ -43,7 +43,7 @@ export const DOC_NAV: { group: string; pages: DocSection[] }[] = [
     pages: [
       { slug: "coti-testnet", title: "COTI Testnet", group: "On-Chain" },
       { slug: "token-launch", title: "Token Launch", group: "On-Chain" },
-      { slug: "liquidity", title: "Adding Liquidity", group: "On-Chain" },
+      { slug: "liquidity", title: "Liquidity & Graduation", group: "On-Chain" },
     ],
   },
   {
