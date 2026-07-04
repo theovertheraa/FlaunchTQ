@@ -4,6 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/hooks/use-auth";
 
+function openSearch() {
+  window.dispatchEvent(new Event("docs-search-open"));
+}
+
 export function Nav() {
   const pathname = usePathname();
   const { authenticated, displayName, initials, logout, login } = useAuth();
@@ -46,6 +50,15 @@ export function Nav() {
               Docs
             </Link>
           </nav>
+
+          {/* ⌘K Search button */}
+          <button className="nav-search-btn" onClick={openSearch} aria-label="Search docs">
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <span>Search</span>
+            <kbd>⌘K</kbd>
+          </button>
 
           {authenticated ? (
             <Link
