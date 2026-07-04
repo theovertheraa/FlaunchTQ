@@ -13,10 +13,24 @@ export function DocsSidebar() {
     setOpen(prev => ({ ...prev, [group]: !prev[group] }));
   }
 
+  function openSearch() {
+    window.dispatchEvent(new Event("docs-search-open"));
+  }
+
   return (
     <aside className="docs-sidebar">
       <div className="docs-sidebar-inner">
         <div className="docs-sidebar-title">FlaunchTQ Docs</div>
+
+        {/* Search trigger */}
+        <button className="docs-search-trigger" onClick={openSearch}>
+          <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          <span>Search docs...</span>
+          <kbd>⌘K</kbd>
+        </button>
+
         {DOC_NAV.map(({ group, pages }) => {
           const isGroupActive = pages.some(p => pathname === `/docs/${p.slug}` || pathname === `/docs` && p.slug === "introduction");
           const isOpen = open[group] !== undefined ? open[group] : isGroupActive || true;

@@ -1,4 +1,5 @@
 import { DocsSidebar } from "@/components/docs/docs-sidebar";
+import { DocsSearch } from "@/components/docs/docs-search";
 
 export default function DocsLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -7,6 +8,7 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
       <main className="docs-main">
         {children}
       </main>
+      <DocsSearch />
     </div>
   );
 }

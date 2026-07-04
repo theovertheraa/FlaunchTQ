@@ -246,3 +246,51 @@
 .docs-nav-btn.next{align-items:flex-end}
 .docs-nav-btn-label{font-size:11px;color:#52525b;text-transform:uppercase;letter-spacing:.08em}
 .docs-nav-btn-title{font-size:14px;font-weight:500;color:#f5f5f5}
+
+/* ── Docs article wrap (content + TOC side by side) ── */
+.docs-article-wrap{display:grid;grid-template-columns:1fr 220px;gap:48px;align-items:start}
+@media(max-width:1024px){.docs-article-wrap{grid-template-columns:1fr}}
+
+/* ── Breadcrumb ── */
+.docs-breadcrumb{display:flex;align-items:center;gap:6px;font-size:12px;color:#52525b;margin-bottom:20px;flex-wrap:wrap}
+.docs-breadcrumb-sep{opacity:.4}
+.docs-breadcrumb-current{color:#a1a1aa}
+
+/* ── TOC ── */
+.docs-toc{position:sticky;top:88px;padding:0 0 40px}
+.docs-toc-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#52525b;margin-bottom:12px}
+.docs-toc-nav{display:flex;flex-direction:column;gap:2px}
+.docs-toc-link{font-size:13px;color:#52525b;padding:4px 8px;border-radius:6px;text-decoration:none;border-left:2px solid transparent;transition:color .12s,border-color .12s;line-height:1.5}
+.docs-toc-link:hover{color:#d4d4d8}
+.docs-toc-link.indent{padding-left:18px;font-size:12px}
+.docs-toc-link.active{color:#f5f5f5;border-left-color:#6ee7b7}
+
+/* ── Docs search trigger (in sidebar) ── */
+.docs-search-trigger{width:100%;display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.08);background:#0b0b0c;color:#52525b;font-size:13px;cursor:pointer;margin-bottom:20px;transition:border-color .15s,color .15s}
+.docs-search-trigger:hover{border-color:rgba(255,255,255,.16);color:#a1a1aa}
+.docs-search-trigger span{flex:1;text-align:left}
+.docs-search-trigger kbd{font-size:10px;padding:2px 6px;border-radius:5px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#52525b;font-family:inherit}
+
+/* ── Search modal overlay ── */
+.docs-search-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:999;display:flex;align-items:flex-start;justify-content:center;padding-top:80px}
+.docs-search-modal{width:100%;max-width:600px;background:#0f0f10;border:1px solid rgba(255,255,255,.1);border-radius:16px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.6);margin:0 16px}
+.docs-search-input-wrap{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.07)}
+.docs-search-icon{color:#52525b;flex-shrink:0}
+.docs-search-input{flex:1;background:none;border:none;outline:none;font-size:16px;color:#f5f5f5;font-family:inherit}
+.docs-search-input::placeholder{color:#3f3f46}
+.docs-search-esc{font-size:11px;padding:3px 8px;border-radius:6px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#52525b;cursor:pointer;font-family:inherit;flex-shrink:0}
+.docs-search-results{max-height:360px;overflow-y:auto}
+.docs-search-result{width:100%;display:flex;flex-direction:column;gap:2px;padding:10px 16px;border:none;background:none;text-align:left;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.04);transition:background .1s}
+.docs-search-result:hover,.docs-search-result.selected{background:rgba(255,255,255,.06)}
+.docs-search-result-group{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#52525b}
+.docs-search-result-title{font-size:14px;font-weight:500;color:#f5f5f5}
+.docs-search-result-excerpt{font-size:12px;color:#52525b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.docs-search-empty{padding:32px 16px;text-align:center;font-size:14px;color:#3f3f46}
+.docs-search-footer{display:flex;gap:16px;padding:10px 16px;border-top:1px solid rgba(255,255,255,.07);font-size:11px;color:#3f3f46}
+.docs-search-footer kbd{padding:2px 6px;border-radius:4px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);color:#52525b;font-family:inherit;margin-right:4px}
+
+/* ── Code block copy button ── */
+.docs-body pre{background:#0b0b0c;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:18px 20px;overflow-x:auto;margin:0 0 16px;position:relative}
+.docs-body pre code{background:none;padding:0;font-size:13px;color:#d4d4d8;line-height:1.7}
+.copy-btn{position:absolute;top:10px;right:10px;padding:4px 10px;border-radius:7px;font-size:11px;font-weight:600;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);color:#a1a1aa;cursor:pointer;transition:background .15s,color .15s;font-family:inherit}
+.copy-btn:hover{background:rgba(255,255,255,.12);color:#f5f5f5}
