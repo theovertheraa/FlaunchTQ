@@ -1,7 +1,7 @@
 // lib/onchain/factory.ts
 // Read token data from FlaunchFactory on COTI Testnet using viem
 
-import { createPublicClient, http, parseAbi, decodeFunctionResult } from "viem";
+import { createPublicClient, http, parseAbi } from "viem";
 
 const COTI_TESTNET = {
   id: 7082400,
@@ -12,11 +12,45 @@ const COTI_TESTNET = {
 
 export const FACTORY_ADDR = "0x50a8904A42845fAe7Cdb31FA86eB080cA44EA635";
 
-export const FACTORY_ABI = parseAbi([
-  "function tokenCount() view returns (uint256)",
-  "function getToken(uint256 idx) view returns (tuple(address tokenAddress, address curveAddress, address creator, string name, string symbol, string imageUrl, string description, uint256 createdAt))",
-  "function tokenToCurve(address token) view returns (address)",
-]);
+// JSON ABI required for tuple return type — parseAbi doesn't support inline tuple strings
+export const FACTORY_ABI = [
+  {
+    name: "tokenCount",
+    type: "function",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    name: "getToken",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "idx", type: "uint256" }],
+    outputs: [
+      {
+        name: "",
+        type: "tuple",
+        components: [
+          { name: "tokenAddress", type: "address" },
+          { name: "curveAddress", type: "address" },
+          { name: "creator",      type: "address" },
+          { name: "name",         type: "string" },
+          { name: "symbol",       type: "string" },
+          { name: "imageUrl",     type: "string" },
+          { name: "description",  type: "string" },
+          { name: "createdAt",    type: "uint256" },
+        ],
+      },
+    ],
+  },
+  {
+    name: "tokenToCurve",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "token", type: "address" }],
+    outputs: [{ name: "", type: "address" }],
+  },
+] as const;
 
 export const CURVE_ABI = parseAbi([
   "function currentPrice() view returns (uint256)",
