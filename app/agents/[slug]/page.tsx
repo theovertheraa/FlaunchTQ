@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { notFound } from "next/navigation";
 import Link from "next/link";
 import { use } from "react";
 import { getAgentBySlug, type AgentData } from "@/lib/mock/all-agents";
