@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { use } from "react";
-import { getAgentBySlug } from "@/lib/mock/all-agents";
+import { getAgentBySlug, type AgentData } from "@/lib/mock/all-agents";
+import type { OnchainTokenInfo } from "@/lib/onchain/factory";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -23,13 +24,67 @@ function loadScript(src: string): Promise<void> {
   });
 }
 
+// Convert onchain token info to AgentData shape for rendering
+function onchainToAgent(t: OnchainTokenInfo): AgentData {
+  return {
+    slug:            t.slug,
+    name:            t.name,
+    ticker:          t.symbol,
+    color:           "#34d399",
+    seed:            Math.abs(parseInt(t.tokenAddress.slice(2, 10), 16)) % 9999,
+    cat:             "On-Chain",
+    status:          "bonding",
+    init:            t.symbol.slice(0, 2).toUpperCase(),
+    desc:            t.description || `${t.name} (${t.symbol}) — launched via FlaunchTQ bonding curve on COTI Testnet.`,
+    supply:          100_000_000_000,
+    launchMC:        1,
+    mcap:            0,
+    price:           1.25e-10,
+    vol:             0,
+    cap:             "—",
+    volStr:          "—",
+    change:          "+0.00%",
+    isNew:           true,
+    contractAddress: t.tokenAddress,
+    curveAddress:    t.curveAddress,
+  };
+}
+
 export default function AgentPage({ params }: Props) {
   const { slug } = use(params);
-  const agent = getAgentBySlug(slug);
-  if (!agent) notFound();
+  const mockAgent = getAgentBySlug(slug);
+
+  // State for on-chain lookup when mock not found
+  const [agent, setAgent] = useState<AgentData | null>(mockAgent ?? null);
+  const [loading, setLoading] = useState(!mockAgent);
+  const [notFoundState, setNotFoundState] = useState(false);
+
+  // If not in mock data, try on-chain lookup
+  useEffect(() => {
+    if (mockAgent) return;
+    let cancelled = false;
+    setLoading(true);
+    fetch(`/api/agents/onchain/${slug}`)
+      .then(r => r.ok ? r.json() : null)
+      .then((data: OnchainTokenInfo | null) => {
+        if (cancelled) return;
+        if (data) {
+          setAgent(onchainToAgent(data));
+          setLoading(false);
+        } else {
+          setNotFoundState(true);
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) { setNotFoundState(true); setLoading(false); }
+      });
+    return () => { cancelled = true; };
+  }, [slug, mockAgent]);
 
   useEffect(() => {
-    // Inject AGENT_CFG
+    if (!agent) return;
+
     const cfgScript = document.createElement("script");
     cfgScript.id = "agent-cfg";
     const existing = document.getElementById("agent-cfg");
@@ -48,7 +103,6 @@ export default function AgentPage({ params }: Props) {
     })};`;
     document.head.appendChild(cfgScript);
 
-    // Load scripts sequentially — order matters
     async function boot() {
       try {
         await loadScript("https://cdn.jsdelivr.net/npm/ethers@6.13.2/dist/ethers.umd.min.js");
@@ -64,24 +118,46 @@ export default function AgentPage({ params }: Props) {
     boot();
 
     return () => {
-      // Cleanup scripts on unmount
-      ["/web3.js", "/token-engine.js", "/wallet.js", "/token-page.js", "/auth.js"].forEach(src => {
-        const el = document.querySelector(`script[data-src="${src}"]`);
-        if (el) el.remove();
-      });
+      ["agent-cfg"].forEach(id => document.getElementById(id)?.remove());
     };
-  }, [slug]); // re-run when slug changes
+  }, [agent]);
+
+  // Loading state
+  if (loading) {
+    return (
+      <div style={{ minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 16 }}>
+        <div style={{ width: 32, height: 32, border: "2px solid #27272a", borderTopColor: "#34d399", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+        <div style={{ fontSize: 13, color: "#52525b" }}>Loading token…</div>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+
+  // Not found
+  if (notFoundState || !agent) {
+    return (
+      <div style={{ minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 16, padding: "0 24px", textAlign: "center" }}>
+        <div style={{ fontSize: 40 }}>🔍</div>
+        <div style={{ fontSize: 22, fontWeight: 700, color: "#f5f5f5" }}>Token not found</div>
+        <div style={{ fontSize: 14, color: "#52525b", maxWidth: 400 }}>
+          This token doesn&apos;t exist in our registry or on-chain. It may have been launched with a different slug.
+        </div>
+        <Link href="/" className="btn primary" style={{ marginTop: 8, padding: "10px 24px", borderRadius: 12, textDecoration: "none" }}>
+          ← Back to Marketplace
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <>
-      <div className="wrap">
-        <a href="/" style={{ fontSize: 13, color: "#52525b", display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 28 }}>
-          ← Back
-        </a>
-
+      <div className="container" style={{ paddingTop: 24, paddingBottom: 80 }}>
         {/* Header */}
-        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "flex-start", gap: 24, marginBottom: 28 }}>
-          <div style={{ display: "flex", gap: 20, alignItems: "flex-start" }}>
+        <div style={{ marginBottom: 20 }}>
+          <Link href="/" style={{ fontSize: 13, color: "#52525b", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 16 }}>
+            ← Marketplace
+          </Link>
+          <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
             <div
               className="avatar"
               style={{
@@ -112,6 +188,15 @@ export default function AgentPage({ params }: Props) {
               <p style={{ margin: "8px 0 0", fontSize: 13, color: "#71717a", maxWidth: 520, lineHeight: 1.7 }}>
                 {agent.desc}
               </p>
+              {agent.contractAddress && (
+                <a
+                  href={`https://testnet.cotiscan.io/address/${agent.contractAddress}`}
+                  target="_blank" rel="noreferrer"
+                  style={{ display: "inline-flex", alignItems: "center", gap: 4, marginTop: 8, fontSize: 11, color: "#52525b", textDecoration: "none", fontFamily: "monospace" }}
+                >
+                  {agent.contractAddress.slice(0, 10)}…{agent.contractAddress.slice(-6)} ↗
+                </a>
+              )}
             </div>
           </div>
         </div>

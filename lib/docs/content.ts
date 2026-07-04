@@ -221,30 +221,33 @@ export const DOC_PAGES: Record<string, DocPage> = {
     title: "Creating an Agent",
     content: `
 <h1>Creating an Agent</h1>
-<p>Launch your own AI agent token on COTI Testnet in minutes.</p>
+<p>Launch your own AI agent token on COTI Testnet in one click. <strong>You only pay gas — no liquidity needed.</strong></p>
 
-<h2>Step 1 — Agent Details</h2>
-<p>Fill in the <strong>Create</strong> form:</p>
+<h2>How It Works</h2>
+<p>FlaunchTQ uses a <strong>pump.fun-style bonding curve</strong>. When you launch a token:</p>
+<ul>
+  <li>A new ERC-20 token (100B supply) is deployed on COTI Testnet</li>
+  <li>A bonding curve contract is deployed and holds the token supply</li>
+  <li>Buyers provide liquidity — the price rises with every buy automatically</li>
+  <li>When <strong>50 COTI is collected</strong>, the token graduates to Uniswap V2 and LP is burned forever (zero rug pull)</li>
+</ul>
+
+<h2>Step 1 — Fill in the Form</h2>
 <ul>
   <li><strong>Agent Name</strong> — Display name for your agent</li>
   <li><strong>Ticker Symbol</strong> — 2–6 characters (e.g. NOVA)</li>
   <li><strong>Description</strong> — What your agent does</li>
-  <li><strong>Category</strong> — DeFi, Data, Security, Infrastructure, or Social</li>
-  <li><strong>Total Supply</strong> — Number of tokens to mint</li>
   <li><strong>Image</strong> — Upload an avatar (optional)</li>
 </ul>
 
-<h2>Step 2 — Deploy Token</h2>
-<p>Click <strong>Launch Agent</strong>. Your wallet will be prompted to sign a transaction. The contract deploys on COTI Testnet and your token is live.</p>
-
-<h2>Step 3 — Add Liquidity</h2>
-<p>After deployment, add initial liquidity to enable trading. Enter the token amount and COTI amount for the pool.</p>
+<h2>Step 2 — Launch</h2>
+<p>Click <strong>Launch Agent</strong>. Your wallet will prompt one transaction. After confirmation, your token is live with a bonding curve — anyone can buy immediately.</p>
 
 <h2>Requirements</h2>
 <ul>
-  <li>Must be logged in (Privy or MetaMask)</li>
-  <li>Wallet must be connected to COTI Testnet (Chain ID: 7082400)</li>
-  <li>Must have COTI testnet tokens for gas</li>
+  <li>MetaMask connected to COTI Testnet (Chain ID: 7082400)</li>
+  <li>Small amount of COTI for gas (~0.01 COTI)</li>
+  <li>No COTI needed for liquidity</li>
 </ul>
     `,
   },
@@ -365,52 +368,60 @@ export const DOC_PAGES: Record<string, DocPage> = {
     title: "Token Launch",
     content: `
 <h1>Token Launch</h1>
-<p>Deploy an ERC-20 agent token on COTI Testnet using the FlaunchTQ factory contract.</p>
+<p>Deploy an AI agent token on COTI Testnet via FlaunchTQ\'s bonding curve factory. Creator pays gas only.</p>
 
 <h2>What Gets Deployed</h2>
-<p>A standard ERC-20 contract with:</p>
+<p>One transaction deploys two contracts:</p>
 <ul>
-  <li>Name and symbol you specify</li>
-  <li>Total supply minted to your wallet</li>
-  <li>18 decimals</li>
-  <li>Stored metadata (description, image URL, category)</li>
+  <li><strong>FlaunchToken</strong> — ERC-20, 100B supply, minted directly to the curve</li>
+  <li><strong>FlaunchBondingCurve</strong> — Acts as the AMM. Handles buy/sell and auto-graduation</li>
 </ul>
 
 <h2>Factory Contract</h2>
-<p>All tokens are deployed through the FlaunchTQ factory, which maintains a registry of all agents. This registry powers the on-chain tab in Portfolio and the Create page.</p>
+<p>All tokens go through the FlaunchFactory at <code>0x50a8904A42845fAe7Cdb31FA86eB080cA44EA635</code> on COTI Testnet. The factory maintains a registry of every token ever launched.</p>
 
-<h2>After Deployment</h2>
-<p>Once deployed:</p>
+<h2>Bonding Curve Mechanics</h2>
 <ul>
-  <li>Your token appears in the global factory registry</li>
-  <li>Anyone can view it on the COTI block explorer</li>
-  <li>You can add liquidity to enable AMM trading</li>
-  <li>Token address is shown in the success message</li>
+  <li>80B tokens available for bonding curve trading</li>
+  <li>20B tokens reserved for graduation liquidity pool</li>
+  <li>Price increases with every buy (constant product formula)</li>
+  <li>1% platform fee on every trade</li>
 </ul>
+
+<h2>Graduation</h2>
+<p>When <strong>50 COTI</strong> is collected by the curve:</p>
+<ol>
+  <li>Contract automatically calls Uniswap V2 <code>addLiquidityETH</code></li>
+  <li>20B tokens + all collected COTI enter the pool</li>
+  <li>LP tokens are sent to <code>0x000...dead</code> (burned forever)</li>
+  <li>Token is now freely tradeable on Uniswap V2</li>
+</ol>
     `,
   },
   liquidity: {
     slug: "liquidity",
-    title: "Adding Liquidity",
+    title: "Liquidity & Graduation",
     content: `
-<h1>Adding Liquidity</h1>
-<p>After launching a token, add liquidity to enable trading through the COTI AMM.</p>
+<h1>Liquidity & Graduation</h1>
+<p>FlaunchTQ uses a bonding curve model — no manual liquidity needed from creators.</p>
 
-<h2>What is Liquidity?</h2>
-<p>Liquidity is the pool of tokens and COTI that others trade against. Without liquidity, no one can buy your token. As liquidity provider (LP), you earn fees from every trade.</p>
+<h2>How Liquidity Works</h2>
+<p>Unlike traditional DEX launches, FlaunchTQ tokens start with zero external liquidity. The bonding curve contract <em>is</em> the liquidity. Every COTI spent buying a token adds to the curve\'s reserve.</p>
 
-<h2>Adding Liquidity</h2>
-<ol>
-  <li>Deploy your agent token (Step 1 of Create flow)</li>
-  <li>The Add Liquidity form appears automatically</li>
-  <li>Enter the amount of your token to add</li>
-  <li>Enter the amount of COTI to pair with it</li>
-  <li>Click <strong>Add Liquidity</strong></li>
-  <li>Approve both transactions in your wallet</li>
-</ol>
+<h2>Graduation Threshold</h2>
+<p>Each token has a progress bar showing how close it is to graduation (50 COTI collected). Once reached:</p>
+<ul>
+  <li>All collected COTI + 20B tokens move to a Uniswap V2 pool</li>
+  <li>LP is burned — permanently locked, zero rug pull risk</li>
+  <li>Token trades freely on the open market</li>
+</ul>
 
-<h2>Initial Price</h2>
-<p>The ratio of token:COTI you provide sets the initial price. For example, if you add 1,000,000 tokens and 10 COTI, the initial price is 0.00001 COTI per token.</p>
+<h2>Why This Model?</h2>
+<ul>
+  <li><strong>Zero barrier</strong> — creators don\'t need COTI upfront</li>
+  <li><strong>Anti-rug</strong> — LP burned on graduation, no one can drain the pool</li>
+  <li><strong>Fair launch</strong> — everyone buys at the same curve, no pre-sale advantage</li>
+</ul>
     `,
   },
   faq: {
@@ -420,7 +431,7 @@ export const DOC_PAGES: Record<string, DocPage> = {
 <h1>FAQ</h1>
 
 <h2>Is this real money?</h2>
-<p>No. The mock trading uses simulated COTI ($10,000 starting balance) stored in your browser. On-chain features use COTI Testnet which uses test tokens with no real monetary value.</p>
+<p>No. The mock trading uses simulated COTI (10,000 COTI starting balance) stored in your browser. On-chain features use COTI Testnet which uses test tokens with no real monetary value.</p>
 
 <h2>Why do I need to login?</h2>
 <p>Login is required to trade, create agents, and view your portfolio. FlaunchTQ uses Privy for authentication — it supports Google, X, Wallet, and Email login.</p>
@@ -429,10 +440,10 @@ export const DOC_PAGES: Record<string, DocPage> = {
 <p>Privy is an authentication system that automatically creates an embedded crypto wallet for you when you sign in. You don't need MetaMask to get started — Privy handles wallet creation invisibly.</p>
 
 <h2>Why does my on-chain portfolio show no tokens?</h2>
-<p>The on-chain tab reads your real COTI Testnet balance. If you haven't done any on-chain transactions (deployed a token, added liquidity), it will be empty. Mock trades from the Buy/Sell panel appear in the Holdings tab, not the On-chain tab.</p>
+<p>The on-chain tab reads your real COTI Testnet balance. If you haven't deployed a token or traded on-chain yet, it will be empty. Mock trades from the Buy/Sell panel appear in the Holdings tab, not the On-chain tab.</p>
 
 <h2>How do I reset my mock balance?</h2>
-<p>Clear your browser's localStorage for this site, or open the site in a private/incognito window. Your mock balance will reset to $10,000.</p>
+<p>Clear your browser's localStorage for this site, or open the site in a private/incognito window. Your mock balance will reset to 10,000 COTI.</p>
 
 <h2>Can I trade on mainnet?</h2>
 <p>Not yet. FlaunchTQ currently operates on COTI Testnet only. Mainnet support is planned for a future release.</p>
