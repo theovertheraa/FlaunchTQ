@@ -104,23 +104,23 @@ export default function PortfolioPage() {
       const bal = await web3.getCotiBalance(addr);
       setCotiBal(parseFloat(bal).toFixed(4) + " COTI");
 
-      // Factory tokens
+      // Factory tokens — use new FlaunchFactory
       const { ethers } = (window as any);
       if (!ethers) throw new Error("ethers not loaded");
 
       const factoryAbi = [
         "function tokenCount() view returns (uint256)",
-        "function tokens(uint256) view returns (address tokenAddress, string name, string symbol, uint256 totalSupply, address creator, string imageUrl, string description, uint256 createdAt)",
+        "function getToken(uint256 idx) view returns (tuple(address tokenAddress, address curveAddress, address creator, string name, string symbol, string imageUrl, string description, uint256 createdAt))",
       ];
       const erc20Abi = ["function balanceOf(address) view returns (uint256)"];
       const provider = await web3.getReadProvider();
-      const factory = new ethers.Contract(web3.FACTORY_ADDR, factoryAbi, provider);
+      const factory = new ethers.Contract(web3.FLAUNCH_FACTORY, factoryAbi, provider);
       const count = Number(await factory.tokenCount());
 
       const rows: OnchainToken[] = [];
       for (let i = 0; i < count; i++) {
         try {
-          const t = await factory.tokens(i);
+          const t = await factory.getToken(i);
           const erc = new ethers.Contract(t.tokenAddress, erc20Abi, provider);
           const raw = await erc.balanceOf(addr);
           const balance = Number(ethers.formatUnits(raw, 18));
